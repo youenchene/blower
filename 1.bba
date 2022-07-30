@@ -24,6 +24,7 @@ WBStartup
 #endAnimCount=8
 #bulletPerPlayer=2
 #waitBullet=30
+#speedBullet=1
 
 NEWTYPE .Level
   map.b[#mapSize]
@@ -44,6 +45,9 @@ End NEWTYPE
 
 NEWTYPE .Bullet
   x.w
+  x1.w
+  x2.w
+  y.w
   y1.w
   y2.w
   direction.b
@@ -62,7 +66,7 @@ Bitmap 2,320,16,4 ;hid
 
 Bitmap 3, 80, 64, 4 ;Bobs 
 Bitmap 4, 32, 32, 2 ;World 1 
-Bitmap 5, 24, 8, 2 ;Bullets Sprite 
+Bitmap 5, 48, 8, 2 ;Bullets Sprite 
 
 
 NPrint "Load Tiles..."
@@ -120,12 +124,34 @@ LoadBitMap 5, "assets/bullet.iff"
 Use Bitmap 5
 GetaShape 0,0,0,1,1
 GetaSprite 0,0
-GetaShape 0,0,0,4,7
+
+;up & down
+GetaShape 0,24,4,7,4
+GetaSprite 7,0
+YFlip 0
 GetaSprite 1,0
-GetaShape 0,10,3,4,2
+GetaShape 0,35,0,2,4
+GetaSprite 8,0
+YFlip 0
 GetaSprite 2,0
-GetaShape 0,17,1,7,6
+GetaShape 0,40,1,6,7
+GetaSprite 9,0
+YFlip 0
 GetaSprite 3,0
+;right & left
+GetaShape 0,0,0,4,7
+GetaSprite 4,0
+XFlip 0
+GetaSprite 10,0
+GetaShape 0,10,3,4,2
+GetaSprite 5,0
+XFlip 0
+GetaSprite 11,0
+GetaShape 0,17,1,7,6
+GetaSprite 6,0
+XFlip 0
+GetaSprite 12,0
+
 Free BitMap 5
 
 DEFTYPE .Level level1
@@ -208,13 +234,6 @@ player(0)\bullets=#bulletPerPlayer
 player(0)\waitBullet=0
 
 Dim List bullets.Bullet(8)
-
-
-BitMapOutput 2 : Colour 2,0
-Locate 0,0
-Print player(0)\bullets
-Print player(0)\waitBullet
-
 
 db.b=0
 Repeat
@@ -312,11 +331,26 @@ Repeat
       If (Joyb(1) = 1)
         If (player(i)\bullets>0)
           If AddItem(bullets())
-            bullets()\x=player(i)\x+15
+            bullets()\direction=player(i)\direction
+            If (player(i)\direction=0)
+              bullets()\y=player(i)\y-4    
+            EndIf
+            If (player(i)\direction=1)
+              bullets()\x=player(i)\x+15 
+            EndIf
+            If (player(i)\direction=2)
+              bullets()\y=player(i)\y+15   
+            EndIf
+            If (player(i)\direction=3)
+              bullets()\x=player(i)\x-4   
+            EndIf
             bullets()\y1=player(i)\y+6
             bullets()\y2=player(i)\y+8
+            bullets()\x1=player(i)\x
+            bullets()\x2=player(i)\x+2
             bullets()\animIndex=0
             bullets()\player=i
+            bullets()\speed=#speedBullet
             bullets()\init=#initAnimCount
             bullets()\endLife=-1
             bullets()\channel=2-player(i)\bullets
@@ -343,19 +377,48 @@ Repeat
         \init=\init-1
         \animIndex=0
       Else
-        \x=\x+1
+        dot.b
+        If (\direction=0)
+          \y=\y-\speed   
+          dot.b=Point(\x2,\y-1)
+        EndIf
+        If (\direction=1)
+          \x=\x+\speed 
+          dot.b=Point(\x+6,\y2)
+        EndIf
+        If (\direction=2)
+           \y=\y+\speed   
+           dot.b=Point(\x2,\y+6)  
+        EndIf
+        If (\direction=3)
+           \x=\x-\speed 
+           dot.b=Point(\x-1,\y2)
+        EndIf
         \animIndex=1
-        dot.b=Point(\x+6,\y2)
         If (dot=2 OR dot=3)
          bullets()\endLife=#endAnimCount
         EndIf
       EndIf
     EndIf
-    If (\animIndex=1)
-      DisplaySprite 1,1+\animIndex,\x,\y2,\player*2+\channel
-    Else
-      DisplaySprite 1,1+\animIndex,\x,\y1,\player*2+\channel
+    xb.w
+    yb.w
+    If (\direction=0 OR \direction=2)
+      yb=\y   
+      If (\animIndex=1)
+        xb=\x2
+      Else
+        xb=\x1
+      EndIf
     EndIf
+    If (\direction=1 OR \direction=3)
+      xb=\x
+      If (\animIndex=1)
+        yb=\y2
+      Else
+        yb=\y1
+      EndIf
+    EndIf
+    DisplaySprite 1,1+\direction*3+\animIndex,xb,yb,\player*2+\channel
     If (\endLife=0)
       DisplaySprite 1,0,\x,\y1,\player*2+\channel
       player(\player)\bullets=player(\player)\bullets+1
@@ -364,7 +427,10 @@ Repeat
 
     BitMapOutput 2 : Colour 2,0
     Locate 0,0
+    Print player(0)\direction
+    Locate 3,0
     Print player(0)\bullets
+    Locate 6,0
     Print player(0)\waitBullet
   Wend
   

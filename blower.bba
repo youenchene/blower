@@ -18,9 +18,9 @@
 ;  1-4 World1
 ;  11-14 World2
 ;  21-24 World3
-;  26-30 HID - Player
+;  26-30 HUD - Player
 ;  31-34 World4
-;  36-38 HID - Avatar
+;  36-38 HUD - Avatar
 ;  50-90 Avatar 1
 ;
 ;****************************************
@@ -37,8 +37,8 @@ WBStartup
 #speedBullet=2
 #maxEnergy=15;
 
-#ShapeIndexHIDAvatar=36
-#ShapeIndexHIDPlayer=27
+#ShapeIndexHUDAvatar=36
+#ShapeIndexHUDPlayer=27
 
 NEWTYPE .Level
   map.b[#mapSize]
@@ -80,12 +80,12 @@ End NEWTYPE
 
 Bitmap 0,320,224,4; db0
 Bitmap 1,320,224,4; db1
-Bitmap 2,320,16,5 ;hid 
+Bitmap 2,320,16,5 ;hud 
 
 Bitmap 3, 80, 64, 4 ;Bobs 
 Bitmap 4, 32, 32, 2 ;World 1 
 Bitmap 5, 48, 8, 2 ;Bullets Sprite 
-Bitmap 6, 64, 81, 5 ;HID
+Bitmap 6, 64, 81, 5 ;HUD
 
 NPrint "Load Tiles..."
 LoadBitMap 4, "assets/world1.iff"
@@ -197,17 +197,17 @@ for x.b=0 to (#mapWidth-1)
 next
 CopyBitMap 0,1 ; for double buffering
 
-; HID
-NPrint "Init HID..."
-LoadBitMap 6, "assets/hid.iff"
+; HUD
+NPrint "Init HUD..."
+LoadBitMap 6, "assets/hud.iff"
 Use Bitmap 6
 for i.b=0 to 3
   for j.b=0 to 2
-    GetaShape #ShapeIndexHIDAvatar+i+j*4,i*16,j*16,16,16
+    GetaShape #ShapeIndexHUDAvatar+i+j*4,i*16,j*16,16,16
   Next
-  GetaShape #ShapeIndexHIDPlayer+i,i*16,49,16,16
+  GetaShape #ShapeIndexHUDPlayer+i,i*16,49,16,16
 next
-GetaShape #ShapeIndexHIDPlayer-1,0,65,16,16 ; cpu
+GetaShape #ShapeIndexHUDPlayer-1,0,65,16,16 ; cpu
 Free Bitmap 6
 
 
@@ -221,7 +221,7 @@ LoadPalette 1, "assets/bullet.pal",16
 LoadPalette 1, "assets/bullet.pal",20
 
 InitPalette 2,32
-LoadPalette 2, "assets/hid.pal" 
+LoadPalette 2, "assets/hud.pal" 
 PalRGB 2,0,0,0,0  ;Reset T0 color to black
 
 Buffer 0,16384
@@ -306,7 +306,7 @@ UsePath player(3)
 \energy=#maxEnergy
 \previousEnergy=#maxEnergy
 
-;Init HID
+;Init HUD
 Use Bitmap 2
 Cls 0
 for i=0 to (nbPlayer-1)
@@ -315,14 +315,14 @@ for i=0 to (nbPlayer-1)
   If (cjoy >= 0 and cjoy < 2)
     cjoy=1-cjoy ; invert because of port 2 as joy port on amiga
   EndIf
-  Block #ShapeIndexHIDPlayer+cjoy,avatar*64,0
-  Block #ShapeIndexHIDAvatar+avatar,16+avatar*64,0
+  Block #ShapeIndexHUDPlayer+cjoy,avatar*64,0
+  Block #ShapeIndexHUDAvatar+avatar,16+avatar*64,0
   Boxf 32+avatar*64,15-player(i)\energy,48+avatar*64,15,30
 next
 
 CreateDisplay 0,1
 
-;hid
+;hud
 DisplayPalette 0,2
 DisplayBitMap 0,2
 ;main

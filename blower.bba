@@ -39,11 +39,16 @@ WBStartup
 #endAnimCount=8
 #bulletPerPlayer=2
 #waitBullet=30
-#speedBullet=2
+#speedBullet=3
 #maxEnergy=15;
 
 #ShapeIndexHUDAvatar=36
 #ShapeIndexHUDPlayer=27
+
+#wallColor1=3
+#wallColor2=4
+#avatarColor1=5
+#avatarColor2=31
 
 NEWTYPE .Level
   map.b[#mapSize]
@@ -359,131 +364,136 @@ Repeat
   Use Bitmap db
   UnBuffer db
 
-  ;
   for i=0 to (nbPlayer-1)
-    currentJoy.b=player(i)\joy
+    UsePath player(i)
+    currentJoy.b=\joy
+
     If (currentJoy >= 0  AND currentJoy < 2)
-      vJoyx.b=Joyx(currentJoy)
-      vJoyy.b=Joyy(currentJoy)
-      If (vJoyx <> 0 OR vJoyy <> 0)
-        if vJoyx=1
-          player(i)\direction=1
-        Endif 
-        if vJoyx=-1
-          player(i)\direction=3
-        EndIf
-        if vJoyy=1
-          player(i)\direction=2
-        EndIf
-        if vJoyy=-1
-          player(i)\direction=0
-        EndIf 
-        player(i)\frameCounter=player(i)\frameCounter+1
-        If (player(i)\frameCounter=player(i)\frameAnim)
-          ; next move
-          next_x.w=player(i)\x
-          next_y.w=player(i)\y
-          ;Debug
-          ;BitMapOutput 2 : Colour 2,0
-          ;Locate 0,0
-          ;Print Point(next_x,next_y)
-          ;Locate 2,0
-          ;Print Point(next_x+15,next_y)
-          ;Locate 4,0
-          ;Print Point(next_x+15,next_y+15)
-          ;Locate 6,0
-          ;Print Point(next_x,next_y+15)
-          ;Wall Collision
-          auth_move.b=0
-          If (player(i)\direction=1)
-            If (Point(next_x+16,next_y+1) <> 3 AND Point(next_x+16,next_y+1) <> 4)
-              If (Point(next_x+16,next_y+14) <> 3 AND Point(next_x+16,next_y+14) <> 4)
-                  auth_move=1
-              EndIf
-            EndIf
-          EndIf
-          If (player(i)\direction=3)
-            If (Point(next_x-1,next_y+1) <> 3 AND Point(next_x-1,next_y+1) <> 4)
-              If (Point(next_x-1,next_y+14) <> 3 AND Point(next_x-1,next_y+14) <> 4)
-                  auth_move=1
-              EndIf
-            EndIf
-          EndIf
-          If (player(i)\direction=0)
-            If (Point(next_x+3,next_y-1) <> 3 AND Point(next_x+3,next_y-1) <> 4)
-              If (Point(next_x+12,next_y-1) <> 3 AND Point(next_x+12,next_y-1) <> 4)
-                  auth_move=1
-              EndIf
-            EndIf
-          EndIf
-          If (player(i)\direction=2)
-            If (Point(next_x+3,next_y+16) <> 3 AND Point(next_x+3,next_y+16) <> 4)
-              If (Point(next_x+12,next_y+16) <> 3 AND Point(next_x+12,next_y+16) <> 4)
-                  auth_move=1
-              EndIf
-            EndIf
-          EndIf
-
-          ;Move
-          If auth_move 
-            player(i)\x=player(i)\x+vJoyx*player(i)\stepsize
-            player(i)\y=player(i)\y+vJoyy*player(i)\stepsize
-          EndIf
-
-          ;Animation
-          player(i)\frameCounter=0
-          If (player(i)\animIndex = 3)
-            player(i)\animIndex=0
-          Else
-            player(i)\animIndex=player(i)\animIndex+1
-          Endif
-        Endif
-      Endif
-    EndIf
-    a.w=player(i)\avatar*50+51+player(i)\direction*10+player(i)\animIndex
-
-    ; Fire
-    If (player(i)\waitBullet>0)
+      ;Get Joy Button
+      buttonOn=Joyb(currentJoy)
       ; Buffer Joy Button to avoid 2 bullet at the same time 
-      player(i)\waitBullet=player(i)\waitBullet-1
-    Else
+      If (\waitBullet>0)
+        
+        \waitBullet=\waitBullet-1
+      EndIf
+    EndIf
+    ; Interaction
+    If (buttonOn=0) ;Move or shoot
       If (currentJoy >= 0  AND currentJoy < 2)
-        If (Joyb(currentJoy) = 1)
-          If (player(i)\bullets>0)
-            If AddItem(bullets())
-              bullets()\direction=player(i)\direction
-              If (player(i)\direction=0)
-                bullets()\y=player(i)\y-4    
+        vJoyx.b=Joyx(currentJoy)
+        vJoyy.b=Joyy(currentJoy)
+        If (vJoyx <> 0 OR vJoyy <> 0)
+          if vJoyx=1
+            \direction=1
+          Endif 
+          if vJoyx=-1
+            \direction=3
+          EndIf
+          if vJoyy=1
+            \direction=2
+          EndIf
+          if vJoyy=-1
+            \direction=0
+          EndIf 
+          \frameCounter=\frameCounter+1
+          If (\frameCounter=\frameAnim)
+            ; next move
+            next_x.w=\x
+            next_y.w=\y
+
+            ;Wall Collision
+            If (\direction=1)
+              pa.w=Point(next_x+16,next_y+1)
+              pb.w=Point(next_x+16,next_y+14)
+            EndIf
+            If (\direction=3)
+              pa.w=Point(next_x-1,next_y+1)
+              pb.w=Point(next_x-1,next_y+14)
+            EndIf
+            If (\direction=0)
+              pa.w=Point(next_x+3,next_y-1)
+              pb.w=Point(next_x+12,next_y-1)
+            EndIf
+            If (\direction=2)
+              pa.w=Point(next_x+3,next_y+16)
+              pb.w=Point(next_x+12,next_y+16)
+            EndIf
+
+            ;check colors in front of avatar
+            paValid.b=(pa <> #wallColor1 AND pa <> #wallColor2)
+            pbValid.b=(pb <> #wallColor1 AND pb <> #wallColor2)
+
+            If (paValid=-1 AND pbValid=-1) ;Move
+              \x=\x+vJoyx*\stepsize
+              \y=\y+vJoyy*\stepsize
+            EndIf
+            If (paValid=-1 AND pbValid=0) ;Avoid obstacle
+              if (\direction=0 OR \direction=2)
+                \x=\x-1
+              Else
+                \y=\y-1
               EndIf
-              If (player(i)\direction=1)
-                bullets()\x=player(i)\x+15 
+            EndIf
+            If (paValid=0 AND pbValid=-1) ;Avoid obstacle
+              if (\direction=0 OR \direction=2)
+                \x=\x+1
+              Else
+                \y=\y+1
               EndIf
-              If (player(i)\direction=2)
-                bullets()\y=player(i)\y+15   
-              EndIf
-              If (player(i)\direction=3)
-                bullets()\x=player(i)\x-4   
-              EndIf
-              bullets()\y1=player(i)\y+6
-              bullets()\y2=player(i)\y+8
-              bullets()\x1=player(i)\x
-              bullets()\x2=player(i)\x+2
-              bullets()\animIndex=0
-              bullets()\player=i
-              bullets()\speed=#speedBullet
-              bullets()\init=#initAnimCount
-              bullets()\endLife=-1
-              bullets()\channel=2-player(i)\bullets
-              player(i)\waitBullet=#waitBullet
-              player(i)\bullets=player(i)\bullets-1
+            EndIf
+            ;Animation
+            \frameCounter=0
+            If (\animIndex = 3)
+              \animIndex=0
+            Else
+              \animIndex=\animIndex+1
             Endif
           Endif
+        Endif
+      EndIf
+    Else
+      ; Fire
+      \frameCounter=0
+      \animIndex=0
+      If (\waitBullet<=0)
+        If (currentJoy >= 0  AND currentJoy < 2)
+          If (buttonOn = 1)
+            If (\bullets>0)
+              If AddItem(bullets())
+                bullets()\direction=\direction
+                If (\direction=0)
+                  bullets()\y=\y-4    
+                EndIf
+                If (\direction=1)
+                  bullets()\x=\x+15 
+                EndIf
+                If (\direction=2)
+                  bullets()\y=\y+15   
+                EndIf
+                If (\direction=3)
+                  bullets()\x=\x-4   
+                EndIf
+                bullets()\y1=\y+6
+                bullets()\y2=\y+8
+                bullets()\x1=\x
+                bullets()\x2=\x+2
+                bullets()\animIndex=0
+                bullets()\player=i
+                bullets()\speed=#speedBullet
+                bullets()\init=#initAnimCount
+                bullets()\endLife=-1
+                bullets()\channel=2-\bullets
+                \waitBullet=#waitBullet
+                \bullets=\bullets-1
+              Endif
+            Endif
+          EndIf
         EndIf
       EndIf
     EndIf
-
+    a.w=\avatar*50+51+\direction*10+\animIndex
     ;draw bobs
-    BBlit 0,a,player(i)\x,player(i)\y 
+    BBlit 0,a,\x,\y 
   next
 
   ;Update and Draw Sprites

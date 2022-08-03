@@ -55,6 +55,8 @@ WBStartup
 #energyBulletImpact=1
 #shotAnim=6
 
+currentWorld.b=4
+
 NEWTYPE .Level
   map.b[#mapSize]
 End NEWTYPE 
@@ -112,7 +114,34 @@ GetaShape 1,0,0,16,16
 GetaShape 3,0,16,16,16
 GetaShape 2,16,0,16,16
 GetaShape 4,16,16,16,16
+
+LoadBitMap 4, "assets/world2.iff"
+; Load Tile
+Use Bitmap 4
+GetaShape 11,0,0,16,16
+GetaShape 13,0,16,16,16
+GetaShape 12,16,0,16,16
+GetaShape 14,16,16,16,16
+
+LoadBitMap 4, "assets/world3.iff"
+; Load Tile
+Use Bitmap 4
+GetaShape 21,0,0,16,16
+GetaShape 23,0,16,16,16
+GetaShape 22,16,0,16,16
+GetaShape 24,16,16,16,16
+
+LoadBitMap 4, "assets/world4.iff"
+; Load Tile
+Use Bitmap 4
+GetaShape 31,0,0,16,16
+GetaShape 33,0,16,16,16
+GetaShape 32,16,0,16,16
+GetaShape 34,16,16,16,16
+
 Free Bitmap 4
+
+
 
 
 
@@ -207,11 +236,13 @@ EndIf
 CloseFile 0
 
 NPrint "Draw Map..."
+
+
 Use Bitmap 0
 for x.b=0 to (#mapWidth-1)
     for y.b=0 to (#mapHeight-1)
         tile=level1\map[x+y*#mapWidth]
-        Block tile,x*16,y*16
+        Block tile+(currentWorld-1)*10,x*16,y*16
     next
 next
 CopyBitMap 0,1 ; for double buffering
@@ -237,11 +268,18 @@ InitPalette 1,32
 LoadPalette 1, "assets/blower.pal"
 PalRGB 1,0,0,0,0  ;Reset T0 color to black
 ;World Color
-PalRGB 1,1,0,6,6  
-PalRGB 1,2,0,6,12  
-PalRGB 1,3,5,5,5  
-PalRGB 1,4,9,9,9  
-PalRGB 1,4,9,9,9  
+If currentWorld=1
+  Gosub PaletteWorld1
+EndIf
+If currentWorld=2
+  Gosub PaletteWorld2
+EndIf
+If currentWorld=3
+  Gosub PaletteWorld3
+EndIf
+If currentWorld=4
+  Gosub PaletteWorld4
+EndIf
 
 ;Sprite Colorbullets
 for i=0 to 3
@@ -639,3 +677,33 @@ Delay_ 50
 AMIGA
 NPrint "The End."
 End
+
+
+.PaletteWorld1
+  PalRGB 1,1,15,12,6  
+  PalRGB 1,2,9,6,1  
+  PalRGB 1,3,0,15,3  
+  PalRGB 1,4,12,12,12  
+  Return
+
+.PaletteWorld2
+  PalRGB 1,1,0,6,6  
+  PalRGB 1,2,0,6,12  
+  PalRGB 1,3,5,5,5  
+  PalRGB 1,4,9,9,9   
+  Return
+
+.PaletteWorld3
+  PalRGB 1,1,0,15,3  
+  PalRGB 1,2,15,12,6  
+  PalRGB 1,3,9,3,0  
+  PalRGB 1,4,0,6,3  
+  Return
+
+.PaletteWorld4
+  PalRGB 1,1,9,9,9  
+  PalRGB 1,2,6,6,6  
+  PalRGB 1,3,12,9,6  
+  PalRGB 1,4,9,6,0  
+  Return
+  

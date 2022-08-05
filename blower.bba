@@ -125,7 +125,7 @@ End Statement
 
 
 ; Intro @ Loading - Micrix Production
-InitPalette 0,32
+
 flags3.l = $02
 InitCopList 0,44,256,flags3,8,4,0
 
@@ -133,30 +133,70 @@ VWAIT 50
 Blitz
 CreateDisplay 0
 InitPalette 3,4
+InitPalette 4,4
 PalRGB 3,0,0,0,0
 PalRGB 3,1,6,0,9
-PalRGB 3,2,15,15,15
+PalRGB 3,2,14,13,15
 PalRGB 3,3,3,0,6
-DisplayPalette 0,0
+DisplayPalette 0,3
 Bitmap 7, 320, 256, 2
 
-BitMapOutput 7
+Use BitMap 7
+
+BitMapOutput 7 
 Colour 1,0
-Locate 8,10
+Locate 11,12
 NPrint "Micrix Production"
 Locate 0,14
 Colour 3,0
 
+DisplayPalette 0, 4
 DisplayBitMap 0, 7
 
-for i.b = 0 to 50
-  fadepalette 0, 3,i / 50
-  displaypalette 0, 3
-  vwait
+For i.b = 0 to 50
+  FadePalette 3, 4, i / 50
+  DisplayPalette 0, 4
+  VWAIT
+Next
+
+for xp.w = 0 to 67
+  Plot 88+xp*2,104,2
+  VWAIT
+  Plot 88+xp*2,104,0
 next
+VWAIT 2
+Plot 222,96,2
+VWAIT 2
+Plot 222,96,0
+Plot 221,96,2
+Plot 223,96,2
+Plot 222,95,2
+Plot 222,97,2
+VWAIT 2
+Plot 221,96,0
+Plot 223,96,0
+Plot 222,95,0
+Plot 222,97,0
+Plot 220,96,2
+Plot 224,96,2
+Plot 222,94,2
+Plot 222,98,2
+VWAIT 12
+Plot 220,96,3
+Plot 224,96,3
+Plot 222,94,3
+Plot 222,98,3
+VWAIT 10
 
+For i.b = 0 to 50
+  FadePalette 3, 4, 1-i / 50
+  DisplayPalette 0, 4
+  VWAIT 2
+Next
 
-VWAIT 50
+Cls 0
+
+DisplayPalette 0, 3
 
 ;Loading
 QAMIGA
@@ -326,6 +366,7 @@ Free Bitmap 6
 
 ; Palette
 NPrint "Init Palette..."
+InitPalette 0,32
 InitPalette 1,32
 LoadPalette 1, "assets/blower.pal"
 PalRGB 1,0,0,0,0  ;Reset T0 color to black
@@ -345,17 +386,19 @@ PalRGB 2,0,0,0,0  ;Reset T0 color to black
 Buffer 0,16384
 Buffer 1,16384
 
+for i.b = 0 to 50
+  Fadepalette 3, 0,1-i / 50
+  DisplayPalette 0, 3
+  vwait
+next
+
 ;Init CopList
 flags0.l = $05
 flags1.l = $05
 InitCopList 0,44,16,flags0,8,32,0
 InitCopList 1,62,224,flags1,8,32,0
 
-for i.b = 0 to 50
-  fadepalette 3, 0,1-i / 50
-  displaypalette 0, 0
-  vwait
-next
+
 
 Free BitMap 7
 

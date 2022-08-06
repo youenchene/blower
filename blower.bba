@@ -39,12 +39,13 @@ Amiga
 #mapWidth=20
 #mapHeight=14
 #mapSize=280
+#levelsCount=7
 #initAnimCount=2
 #endAnimCount=8
 #bulletPerPlayer=2
 #waitBullet=30
 #speedBullet=3
-#maxEnergy=15;
+#maxEnergy=1;
 
 #ShapeIndexHUDAvatar=36
 #ShapeIndexHUDPlayer=27
@@ -54,10 +55,11 @@ Amiga
 #avatarColor1=5
 #avatarColor2=31
 
-#energyBulletImpact=1
+#energyBulletImpact=15 ;1
 #shotAnim=6
 
-currentWorld.b=4
+currentWorld.b=0
+currentLevel.b=0
 
 NEWTYPE .Level
   map.b[#mapSize]
@@ -100,32 +102,38 @@ End NEWTYPE
 
 Statement PaletteWorld{n}
   Select n
-    Case 1
+    Case 0
       PalRGB 1,1,15,12,6  
       PalRGB 1,2,9,6,1  
       PalRGB 1,3,0,15,3  
       PalRGB 1,4,12,12,12  
-    Case 3
+    Case 2
       PalRGB 1,1,0,15,3  
       PalRGB 1,2,15,12,6  
       PalRGB 1,3,9,3,0  
       PalRGB 1,4,0,6,3  
-    Case 4  
+    Case 3  
       PalRGB 1,1,9,9,9  
       PalRGB 1,2,6,6,6  
       PalRGB 1,3,12,9,6  
       PalRGB 1,4,9,6,0   
-    Default ;also case 2
+    Default ;also case 1
       PalRGB 1,1,0,6,6  
       PalRGB 1,2,0,6,12  
       PalRGB 1,3,5,5,5  
       PalRGB 1,4,9,9,9  
-  End Select  
+  End Select
+  ;Sprite Colorbullets
+  For i=0 to 3
+    PalRGB 1,16+i*4+1,0,0,0
+    PalRGB 1,16+i*4+2,7,7,7  
+    PalRGB 1,16+i*4+3,14,14,14  
+  Next  
 End Statement
 
 
-; Intro @ Loading - Micrix Production
 
+; Intro @ Loading - Micrix Production
 flags3.l = $02
 InitCopList 0,44,256,flags3,8,4,0
 
@@ -245,15 +253,11 @@ GetaShape 34,16,16,16,16
 Free Bitmap 4
 
 
-
-
-
 LoadBitMap 3, "assets/avatars.iff"
 
 ; Anim
 ;0 : shooted animation
 ;1-4 : walk animation
-
 Use Bitmap 3
 for j.b=0 to 3
   avatarIndex.w=j*50
@@ -323,32 +327,8 @@ GetaSprite 12,0
 
 Free BitMap 5
 
-DEFTYPE .Level level1
-
-NPrint "Load Map..."
-
-dummy.b 
-if ReadFile(0,"assets/level1.dat") 
-  ReadMem 0,&dummy,1
-  ReadMem 0,&dummy,1
-  size.w=#mapSize
-  ReadMem 0,&level1\map,size
-Else
-  NPrint "Error reading file."
-EndIf
-CloseFile 0
-
-NPrint "Draw Map..."
-
-
-Use Bitmap 0
-for x.b=0 to (#mapWidth-1)
-    for y.b=0 to (#mapHeight-1)
-        tile=level1\map[x+y*#mapWidth]
-        Block tile+(currentWorld-1)*10,x*16,y*16
-    next
-next
-CopyBitMap 0,1 ; for double buffering
+Dim levels.Level(#levelsCount)
+GoSub LoadLevels
 
 ; HUD
 NPrint "Init HUD..."
@@ -363,7 +343,6 @@ next
 GetaShape #ShapeIndexHUDPlayer-1,0,65,16,16 ; cpu
 Free Bitmap 6
 
-
 ; Palette
 NPrint "Init Palette..."
 InitPalette 0,32
@@ -372,12 +351,8 @@ LoadPalette 1, "assets/blower.pal"
 PalRGB 1,0,0,0,0  ;Reset T0 color to black
 ;World Color
 PaletteWorld{currentWorld}
-;Sprite Colorbullets
-for i=0 to 3
-  PalRGB 1,16+i*4+1,0,0,0
-  PalRGB 1,16+i*4+2,7,7,7  
-  PalRGB 1,16+i*4+3,14,14,14  
-next
+
+
 
 InitPalette 2,32
 LoadPalette 2, "assets/hud.pal" 
@@ -398,11 +373,9 @@ flags1.l = $05
 InitCopList 0,44,16,flags0,8,32,0
 InitCopList 1,62,224,flags1,8,32,0
 
-
-
 Free BitMap 7
 
-Delay_ 50
+VWAIT 50
 
 Blitz
 
@@ -410,115 +383,162 @@ nbPlayer.b=4
 Dim player.Player(nbPlayer)
 
 ;Init data
-UsePath player(0)
-\dead=0
-\x=16
-\y=16
-\direction=1
-\animIndex=0
-\frameAnim=4
-\frameCounter=0
-\stepsize=3
-\bullets=#bulletPerPlayer
-\waitBullet=0
-\joy=1
-\avatar=0
-\energy=#maxEnergy
-\previousEnergy=#maxEnergy
-
-UsePath player(1)
-\dead=0
-\x=288
-\y=192
-\direction=3
-\animIndex=0
-\frameAnim=4
-\frameCounter=0
-\stepsize=3
-\bullets=#bulletPerPlayer
-\waitBullet=0
-\joy=0
-\avatar=1
-\energy=#maxEnergy
-\previousEnergy=#maxEnergy
+For i.b=0 to (nbPlayer-1)
+  cp.b=i
+  Gosub InitPlayer
+Next
 
 
-UsePath player(2)
-\dead=0
-\x=288
-\y=16
-\direction=3
-\animIndex=0
-\frameAnim=4
-\frameCounter=0
-\stepsize=3
-\bullets=#bulletPerPlayer
-\waitBullet=0
-\joy=-1
-\avatar=2
-\energy=#maxEnergy
-\previousEnergy=#maxEnergy
-
-
-UsePath player(3)
-\dead=0
-\x=16
-\y=192
-\direction=1
-\animIndex=0
-\frameAnim=4
-\frameCounter=0
-\stepsize=3
-\bullets=#bulletPerPlayer
-\waitBullet=0
-\joy=-1
-\avatar=3
-\energy=#maxEnergy
-\previousEnergy=#maxEnergy
-
-;Init HUD
-Use Bitmap 2
-Cls 0
-for i=0 to (nbPlayer-1)
-  avatar.b=player(i)\avatar
-  cjoy.b=player(i)\joy
-  If (cjoy >= 0 and cjoy < 2)
-    cjoy=1-cjoy ; invert because of port 2 as joy port on amiga
-  EndIf
-  Block #ShapeIndexHUDPlayer+cjoy,avatar*64,0
-  Block #ShapeIndexHUDAvatar+avatar,16+avatar*64,0
-  Boxf 32+avatar*64,15-player(i)\energy,48+avatar*64,15,30
-next
-
-CreateDisplay 0,1
-
-;hud
-DisplayPalette 0,2
-DisplayBitMap 0,2
-;main
-DisplayPalette 1,0
-DisplayBitMap 1,0
-DisplayPalette 1,1
-
-Dim List bullets.Bullet(8)
-
-
-db.b=0
+remainingLevels.b=#levelsCount
 Repeat
+  ;Init data
+  For i.b=0 to (nbPlayer-1)
+    UsePath player(i)
+    Select i
+     Case 0
+      \dead=0
+      \x=16
+      \y=16
+      \direction=1
+      \joy=1
+      \avatar=0
+    Case 1
+      \dead=0
+      \x=288
+      \y=192
+      \direction=3
+      \joy=0
+      \avatar=1
+    Case 2
+      \dead=0
+      \x=288
+      \y=16
+      \direction=3
+      \joy=-1
+      \avatar=2
+    Case 3
+      \dead=0
+      \x=16
+      \y=192
+      \direction=1
+      \joy=-1
+      \avatar=3
+    End Select
+  Next
+
+  ;Init HUD
+  Use Bitmap 2
+  Cls 0
+  for i=0 to (nbPlayer-1)
+    avatar.b=player(i)\avatar
+    cjoy.b=player(i)\joy
+    If (cjoy >= 0 and cjoy < 2)
+      cjoy=1-cjoy ; invert because of port 2 as joy port on amiga
+    EndIf
+    Block #ShapeIndexHUDPlayer+cjoy,avatar*64,0
+    Block #ShapeIndexHUDAvatar+avatar,16+avatar*64,0
+    Boxf 32+avatar*64,15-player(i)\energy,48+avatar*64,15,30
+  next
+
+  BitMapOutput 2 : Colour 21,0
+  Locate 32,1
+  Print "Level: "+str$(currentLevel+1) 
+  Locate 32,1
+  Print "Level: "+str$(currentLevel+1) 
+
+
+  remainingPlayers.b=nbPlayer
+
+  GoSub BuildWorld
+
+  CreateDisplay 0,1
+
+  ;hud
+  DisplayPalette 0,2
+  DisplayBitMap 0,2
+  ;main
+  DisplayPalette 1,0
+  DisplayBitMap 1,0
+  DisplayPalette 1,1
+
+  Dim List bullets.Bullet(8)
+
+
+  db.b=0 ;double buffring
+  Repeat
+    Gosub GameLoop
+  Until (RawStatus($45) OR remainingPlayers<2) ; Escape pressed
+  FlushBuffer 0
+  FlushBuffer 1
+  currentLevel=currentLevel+1
+Until (RawStatus($45) OR currentLevel>=#levelsCount)
+
+Delay_ 50
+AMIGA
+NPrint "The End."
+End
+
+.InitPlayer:
+  UsePath player(cp)
+  \dead=0
+  \animIndex=0
+  \frameAnim=4
+  \frameCounter=0
+  \stepsize=3
+  \bullets=#bulletPerPlayer
+  \waitBullet=0
+  \energy=#maxEnergy
+  \previousEnergy=#maxEnergy
+  Return
+
+.BuildWorld:
+  QAMIGA
+  Use Bitmap 0
+  Cls 0
+  For x.b=0 to (#mapWidth-1)
+      For y.b=0 to (#mapHeight-1)
+        tile.b=levels(currentLevel)\map[x+y*#mapWidth]
+        Block tile+currentWorld*10,x*16,y*16 ; only amiga mlode?
+      Next
+  Next
+  CopyBitMap 0,1 ; for double buffering
+  VWAIT 50
+  BLITZ
+  Return
+
+.LoadLevels:
+  NPrint "Load Levels..."
+  dummy.b 
+  For lev.b=0 to (#levelsCount-1)
+    If ReadFile(0,"assets/level"+Str$(lev+1)+".dat") 
+      ReadMem 0,&dummy,1
+      ReadMem 0,&dummy,1
+      size.w=#mapSize
+      ReadMem 0,&levels(lev)\map,size
+    Else
+      NPrint "Error reading file."
+    EndIf
+    CloseFile 0
+  Next
+  Return
+
+.GameLoop:
   VWait
   ; manage double buffering
   db=1-db
   Use Bitmap db
-
   
   a.w=0
 
+
   ;  First process dead so they are at the background
+  remainingPlayers=nbPlayer
   For i=0 to (nbPlayer-1)
     UsePath player(i)
     If (\dead=1)
       a=50+\avatar*50+40
       Blit a,\x,\y 
+      remainingPlayers=remainingPlayers-1
     EndIf
   Next 
 
@@ -538,6 +558,7 @@ Repeat
         If (\dead=2)
           \dead=\dead-1
           \x=\x-8
+          If (\x>272):\x=272:EndIf
         EndIf
       EndIf
     Else
@@ -669,6 +690,10 @@ Repeat
       a=\avatar*50+51+\direction*10+\animIndex
     EndIf
     ;draw bobs
+    If (\x<16):\x=16:EndIf
+    If (\x>288):\x=288:EndIf
+    If (\y<16):\y=16:EndIf
+    If (\y>192):\y=192:EndIf
     BBlit 0,a,\x,\y 
   EndIf
   next
@@ -757,14 +782,6 @@ Repeat
       KillItem bullets()  
     Endif
 
-
-    ;BitMapOutput 2 : Colour 2,0
-    ;Locate 0,0
-    ;Print player(0)\direction
-    ;Locate 3,0
-    ;Print player(0)\bullets
-    ;Locate 6,0
-    ;Print player(0)\waitBullet
   Wend
 
   ;HUD Update
@@ -784,9 +801,4 @@ Repeat
         Boxf 32+\avatar*64,15-\energy,48+\avatar*64,15,30 
     EndIf
   Next
-  
-Until RawStatus($45) ; Escape pressed
-Delay_ 50
-AMIGA
-NPrint "The End."
-End
+  Return

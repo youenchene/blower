@@ -45,7 +45,7 @@ Amiga
 #bulletPerPlayer=2
 #waitBullet=30
 #speedBullet=3
-#maxEnergy=1;
+#maxEnergy=15;
 
 #ShapeIndexHUDAvatar=36
 #ShapeIndexHUDPlayer=27
@@ -55,7 +55,7 @@ Amiga
 #avatarColor1=5
 #avatarColor2=31
 
-#energyBulletImpact=15 ;1
+#energyBulletImpact= 8 ;15 ;1
 #shotAnim=6
 
 currentWorld.b=0
@@ -99,6 +99,12 @@ NEWTYPE .Bullet
   channel.b
   srcAvatar.b
 End NEWTYPE 
+
+NEWTYPE .SndEvent
+  snd.b
+  side.b ; 0 for left 1 for right
+  vol.b
+End NEWTYPE
 
 Statement PaletteWorld{n}
   Select n
@@ -358,6 +364,19 @@ InitPalette 2,32
 LoadPalette 2, "assets/hud.pal" 
 PalRGB 2,0,0,0,0  ;Reset T0 color to black
 
+
+; Palette
+NPrint "Load Sound Effects..."
+LoadSound 0,"assets/snd/gun1amp.iff"
+LoadSound 1,"assets/snd/gun2amp.iff"
+LoadSound 2,"assets/snd/shotwall.iff"
+LoadSound 3,"assets/snd/shot.iff"
+LoadSound 4,"assets/snd/dead.iff"
+LoadSound 5,"assets/snd/step-sand.iff"
+LoadSound 6,"assets/snd/step-wood.iff"
+LoadSound 7,"assets/snd/step-grass.iff"
+LoadSound 8,"assets/snd/step-road.iff"
+
 Buffer 0,16384
 Buffer 1,16384
 
@@ -388,12 +407,13 @@ For i.b=0 to (nbPlayer-1)
   Gosub InitPlayer
 Next
 
-
 remainingLevels.b=#levelsCount
 Repeat
   ;Init data
   For i.b=0 to (nbPlayer-1)
     UsePath player(i)
+    cp.b=i
+    Gosub InitPlayer
     Select i
      Case 0
       \dead=0
@@ -463,8 +483,10 @@ Repeat
 
   Dim List bullets.Bullet(8)
 
+  Dim List sndevents.SndEvent(8)
 
-  db.b=0 ;double buffring
+
+  db.b=0 ;double buffering
   Repeat
     Gosub GameLoop
   Until (RawStatus($45) OR remainingPlayers<2) ; Escape pressed
@@ -473,7 +495,7 @@ Repeat
   currentLevel=currentLevel+1
 Until (RawStatus($45) OR currentLevel>=#levelsCount)
 
-Delay_ 50
+VWAIT 50
 AMIGA
 NPrint "The End."
 End
@@ -559,6 +581,14 @@ End
           \dead=\dead-1
           \x=\x-8
           If (\x>272):\x=272:EndIf
+          If AddItem(sndevents())
+            sndevents()\snd=4
+            If \x >= 160
+              sndevents()\side=1
+            Else
+              sndevents()\side=0
+            Endif
+          End If
         EndIf
       EndIf
     Else
@@ -640,6 +670,15 @@ End
               \frameCounter=0
               If (\animIndex = 3)
                 \animIndex=0
+                 If AddItem(sndevents())
+                  sndevents()\snd=5+currentWorld
+                  sndevents()\vol=32
+                  If \x >= 160
+                    sndevents()\side=1
+                  Else
+                    sndevents()\side=0
+                  Endif
+                End If
               Else
                 \animIndex=\animIndex+1
               Endif
@@ -681,6 +720,14 @@ End
                   bullets()\srcAvatar=\avatar
                   \waitBullet=#waitBullet
                   \bullets=\bullets-1
+                  If AddItem(sndevents())
+                    sndevents()\snd=0
+                    If \x >= 160
+                      sndevents()\side=1
+                    Else
+                      sndevents()\side=0
+                    Endif
+                  End If
                 Endif
               Endif
             EndIf
@@ -731,6 +778,14 @@ End
         ;Collision with wall
         If (dot=#wallColor1 OR dot=#wallColor2)
          bullets()\endLife=#endAnimCount
+         If AddItem(sndevents())
+            sndevents()\snd=2
+            If \x >= 160
+              sndevents()\side=1
+            Else
+              sndevents()\side=0
+            Endif
+          End If
         EndIf
       EndIf
     EndIf
@@ -765,6 +820,14 @@ End
                 player(p)\previousEnergy=player(p)\energy
                 player(p)\energy=player(p)\energy-#energyBulletImpact
                 player(p)\shot=#shotAnim
+                If AddItem(sndevents())
+                  sndevents()\snd=3
+                  If \x >= 160
+                    sndevents()\side=1
+                  Else
+                    sndevents()\side=0
+                  Endif
+                End If
                 If (player(p)\energy <= 0)
                   player(p)\dead=2
                 EndIf
@@ -801,4 +864,21 @@ End
         Boxf 32+\avatar*64,15-\energy,48+\avatar*64,15,30 
     EndIf
   Next
+
+  ;Process sounds
+  USEPATH sndevents()
+  ResetList sndevents()
+  prio.b=0
+  While NextItem(sndevents())
+    If (prio=0)
+      If (\side=1)
+        side.b=%0100
+      Else
+        side.b=%1000
+      End If
+      if (\vol=0): vol.b=64:Else: vol.b=\vol :End If
+      Sound \snd,side,vol
+    End If
+    KillItem sndevents() 
+  Wend
   Return

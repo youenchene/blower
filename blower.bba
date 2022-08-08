@@ -30,12 +30,12 @@
 ;  100-140 Avatar 4
 ;****************************************
 
-;Maximum Shapes
-
+;NoCli
 WBStartup
 
-Amiga
+DEFTYPE .b
 
+Amiga
 
 #skipIntro=1 ;1 to skip intro
 
@@ -68,7 +68,7 @@ NEWTYPE .Level
   map.b[#mapSize]
 End NEWTYPE 
 
-NEWTYPE .Player
+NEWTYPE .player
   x.w
   y.w
   dead.b
@@ -182,27 +182,27 @@ If (#skipIntro<>1)
     Plot 88+xp*2,104,0
   next
   VWAIT 2
-  Plot 222,96,2
+  Plot 222,92,2
   VWAIT 2
-  Plot 222,96,0
-  Plot 221,96,2
-  Plot 223,96,2
-  Plot 222,95,2
-  Plot 222,97,2
+  Plot 222,92,0
+  Plot 221,92,2
+  Plot 223,92,2
+  Plot 222,91,2
+  Plot 222,93,2
   VWAIT 2
-  Plot 221,96,0
-  Plot 223,96,0
-  Plot 222,95,0
-  Plot 222,97,0
-  Plot 220,96,2
-  Plot 224,96,2
+  Plot 221,92,0
+  Plot 223,92,0
+  Plot 222,91,0
+  Plot 222,93,0
+  Plot 220,92,2
+  Plot 224,92,2
+  Plot 222,90,2
   Plot 222,94,2
-  Plot 222,98,2
   VWAIT 12
-  Plot 220,96,3
-  Plot 224,96,3
+  Plot 220,92,3
+  Plot 224,92,3
+  Plot 222,90,3
   Plot 222,94,3
-  Plot 222,98,3
   VWAIT 10
 
   For i.b = 0 to 50
@@ -216,12 +216,13 @@ Else
   DisplayBitMap 0, 7
 End If
 
-DisplayPalette 0, 3
-Locate 0,14
-Colour 3,0
-
 ;Loading
 QAMIGA
+DisplayPalette 0, 3
+Locate 0,14
+loadTextY.w=14*8
+Colour 3,0
+
 Bitmap 0,320,224,5; db0
 Bitmap 1,320,224,5; db1
 Bitmap 2,320,16,5 ;hud 
@@ -231,7 +232,23 @@ Bitmap 4, 32, 32, 3 ;World 1
 Bitmap 5, 48, 8, 2 ;Bullets Sprite 
 Bitmap 6, 64, 81, 5 ;HUD
 
-NPrint "Load Tiles..."
+Bitmap 8, 244, 15, 2 ;Font
+LoadBitMap 8, "assets/font01.iff"
+
+for i.b=0 to 60
+    GetaShape 250+i,4*i,5,3,5
+next
+Free Bitmap 8
+
+Use Bitmap 7
+textX.w=10
+textY.w=100
+text$="Loading Worlds..."
+Delay_ 50
+Blitz
+Gosub WriteText
+QAMIGA
+
 LoadBitMap 4, "assets/world1.iff"
 ; Load Tile
 Use Bitmap 4
@@ -266,6 +283,14 @@ GetaShape 34,16,16,16,16
 
 Free Bitmap 4
 
+Use Bitmap 7
+textX.w=10
+textY.w=106
+text$="Loading Sprites and Bobs..."
+Delay_ 50
+Blitz
+Gosub WriteText
+QAMIGA
 
 LoadBitMap 3, "assets/avatars.iff"
 
@@ -306,7 +331,7 @@ next
 Free BitMap 3
 
 ; Bullet Sprite
-NPrint "Load Sprites..."
+
 LoadBitMap 5, "assets/bullet.iff"
 Use Bitmap 5
 GetaShape 0,0,0,1,1
@@ -345,7 +370,16 @@ Dim levels.Level(#levelsCount)
 GoSub LoadLevels
 
 ; HUD
-NPrint "Init HUD..."
+Use Bitmap 7
+textX.w=10
+textY.w=118
+text$="Initiating HUD..."
+Delay_ 50
+Blitz
+Gosub WriteText
+QAMIGA
+
+
 LoadBitMap 6, "assets/hud.iff"
 Use Bitmap 6
 for i.b=0 to 3
@@ -358,7 +392,16 @@ GetaShape #ShapeIndexHUDPlayer-1,0,65,16,16 ; cpu
 Free Bitmap 6
 
 ; Palette
-NPrint "Init Palette..."
+Use Bitmap 7
+textX.w=10
+textY.w=124
+text$="Initiating Palette..."
+Delay_ 50
+Blitz
+Gosub WriteText
+QAMIGA
+
+
 InitPalette 0,32
 InitPalette 1,32
 LoadPalette 1, "assets/blower.pal"
@@ -369,12 +412,21 @@ PaletteWorld{currentWorld}
 
 
 InitPalette 2,32
-LoadPalette 2, "assets/hud.pal" 
+LoadPalette 2, "assets/hud.iff" 
 PalRGB 2,0,0,0,0  ;Reset T0 color to black
 
 
-; Palette
-NPrint "Load Sound Effects..."
+; SoundEffects
+Use Bitmap 7
+textX.w=10
+textY.w=130
+text$="Loading Sound Effects..."
+Delay_ 50
+Blitz
+Gosub WriteText
+QAMIGA
+
+
 LoadSound 0,"assets/snd/gun1amp.iff"
 LoadSound 1,"assets/snd/gun2amp.iff"
 LoadSound 2,"assets/snd/shotwall.iff"
@@ -407,7 +459,7 @@ VWAIT 50
 Blitz
 
 nbPlayer.b=4
-Dim player.Player(nbPlayer)
+Dim player.player(nbPlayer)
 
 ;Init data
 For i.b=0 to (nbPlayer-1)
@@ -468,12 +520,10 @@ Repeat
     Boxf 32+avatar*64,15-player(i)\energy,48+avatar*64,15,30
   next
 
-  BitMapOutput 2 : Colour 21,0
-  Locate 32,1
-  Print "Level: "+str$(currentLevel+1) 
-  Locate 32,1
-  Print "Level: "+str$(currentLevel+1) 
-
+  textX.w=256
+  textY.w=9
+  text$="Level: "+str$(currentLevel+1)
+  Gosub WriteText
 
   remainingPlayers.b=nbPlayer
 
@@ -505,7 +555,6 @@ Until (RawStatus($45) OR currentLevel>=#levelsCount)
 
 VWAIT 50
 AMIGA
-NPrint "The End."
 End
 
 .InitPlayer:
@@ -537,7 +586,15 @@ End
   Return
 
 .LoadLevels:
-  NPrint "Load Levels..."
+  Use Bitmap 7
+  textX.w=10
+  textY.w=112
+  text$="Loading Levels..."
+  Delay_ 50
+  Blitz
+  Gosub WriteText
+  QAMIGA
+
   dummy.b 
   For lev.b=0 to (#levelsCount-1)
     If ReadFile(0,"assets/level"+Str$(lev+1)+".dat") 
@@ -553,6 +610,7 @@ End
   Return
 
 .GameLoop:
+  BLITZ
   VWait
   ; manage double buffering
   db=1-db
@@ -895,3 +953,31 @@ End
     KillItem sndevents() 
   Wend
   Return
+
+.WriteText:
+  counter.b = 0
+  textLen.b=Len(text$)
+  Dim display.b(textLen)  
+  For i.b = 1 To textLen
+      oneString$ = Mid$(text$, i, 1)
+      oneAsc = Asc(oneString$)
+      newAsc= oneAsc-48
+      if newAsc>17:newAsc=newAsc-7:End If
+      if newAsc>36:newAsc=newAsc-32:End If
+      Select oneAsc
+        Case 32
+          newAsc=60
+        Case 46
+          newAsc=36
+        Case 58
+          newAsc=40
+      End Select
+      display(counter) = newAsc
+      counter = counter + 1
+  Next i
+  Blitz
+  For i.b = 0 To counter-1
+      Blit 250+display(i), textX+(i*4), textY
+  Next i
+ Return
+  

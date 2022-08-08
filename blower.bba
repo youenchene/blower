@@ -36,6 +36,9 @@ WBStartup
 
 Amiga
 
+
+#skipIntro=1 ;1 to skip intro
+
 #mapWidth=20
 #mapHeight=14
 #mapSize=280
@@ -55,10 +58,10 @@ Amiga
 #avatarColor1=5
 #avatarColor2=31
 
-#energyBulletImpact= 8 ;15 ;1
+energyBulletImpact= 8 ;15 ;1
 #shotAnim=6
 
-currentWorld.b=0
+currentWorld.b=2
 currentLevel.b=0
 
 NEWTYPE .Level
@@ -158,59 +161,64 @@ Bitmap 7, 320, 256, 2
 Use BitMap 7
 
 BitMapOutput 7 
-Colour 1,0
-Locate 11,12
-NPrint "Micrix Production"
-Locate 0,14
-Colour 3,0
 
-DisplayPalette 0, 4
-DisplayBitMap 0, 7
+If (#skipIntro<>1)
+  Colour 1,0
+  Locate 11,12
+  NPrint "Micrix Production"
 
-For i.b = 0 to 50
-  FadePalette 3, 4, i / 50
   DisplayPalette 0, 4
-  VWAIT
-Next
+  DisplayBitMap 0, 7
 
-for xp.w = 0 to 67
-  Plot 88+xp*2,104,2
-  VWAIT
-  Plot 88+xp*2,104,0
-next
-VWAIT 2
-Plot 222,96,2
-VWAIT 2
-Plot 222,96,0
-Plot 221,96,2
-Plot 223,96,2
-Plot 222,95,2
-Plot 222,97,2
-VWAIT 2
-Plot 221,96,0
-Plot 223,96,0
-Plot 222,95,0
-Plot 222,97,0
-Plot 220,96,2
-Plot 224,96,2
-Plot 222,94,2
-Plot 222,98,2
-VWAIT 12
-Plot 220,96,3
-Plot 224,96,3
-Plot 222,94,3
-Plot 222,98,3
-VWAIT 10
+  For i.b = 0 to 50
+    FadePalette 3, 4, i / 50
+    DisplayPalette 0, 4
+    VWAIT
+  Next
 
-For i.b = 0 to 50
-  FadePalette 3, 4, 1-i / 50
-  DisplayPalette 0, 4
+  for xp.w = 0 to 67
+    Plot 88+xp*2,104,2
+    VWAIT
+    Plot 88+xp*2,104,0
+  next
   VWAIT 2
-Next
+  Plot 222,96,2
+  VWAIT 2
+  Plot 222,96,0
+  Plot 221,96,2
+  Plot 223,96,2
+  Plot 222,95,2
+  Plot 222,97,2
+  VWAIT 2
+  Plot 221,96,0
+  Plot 223,96,0
+  Plot 222,95,0
+  Plot 222,97,0
+  Plot 220,96,2
+  Plot 224,96,2
+  Plot 222,94,2
+  Plot 222,98,2
+  VWAIT 12
+  Plot 220,96,3
+  Plot 224,96,3
+  Plot 222,94,3
+  Plot 222,98,3
+  VWAIT 10
 
-Cls 0
+  For i.b = 0 to 50
+    FadePalette 3, 4, 1-i / 50
+    DisplayPalette 0, 4
+    VWAIT 2
+  Next
+  Cls 0
+Else 
+  Cls 0
+  DisplayBitMap 0, 7
+End If
 
 DisplayPalette 0, 3
+Locate 0,14
+Colour 3,0
 
 ;Loading
 QAMIGA
@@ -775,8 +783,13 @@ End
            dot.b=Point(\x-1,\y2)
         EndIf
         \animIndex=1
+        bound.b=0
+        If (\x<16):\x=16:bound=-1:EndIf
+        If (\y<16):\y=16:bound=-1:EndIf
+        If (\x>304):\x=295:bound=-1:EndIf
+        If (\y>208):\y=200:bound=-1:EndIf
         ;Collision with wall
-        If (dot=#wallColor1 OR dot=#wallColor2)
+        If (dot=#wallColor1 OR dot=#wallColor2 OR bound.b=-1)
          bullets()\endLife=#endAnimCount
          If AddItem(sndevents())
             sndevents()\snd=2
@@ -818,7 +831,7 @@ End
               If RectsHit(xb-7,yb-7,14,14,player(p)\x,player(p)\y,16,16) ; larger to void more calculus
                 bullets()\endLife=#endAnimCount ; End bullet
                 player(p)\previousEnergy=player(p)\energy
-                player(p)\energy=player(p)\energy-#energyBulletImpact
+                player(p)\energy=player(p)\energy-energyBulletImpact
                 player(p)\shot=#shotAnim
                 If AddItem(sndevents())
                   sndevents()\snd=3

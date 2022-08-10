@@ -493,24 +493,20 @@ End Statement
     
   Bitmap 8, 320, 128, 5
   LoadBitMap 8, "assets/title.iff"
+
+
+
   
   Bitmap 9, 100, 9, 5
   LoadBitMap 9, "assets/title_elements.iff"
   GetaShape 16,0,0,3,5 ; cursor white
   GetaShape 17,4,0,3,5 ; cursor other
   GetaShape 18,8,0,41,9 ; frame
+  GetaShape 19,56,0,41,9 ; dashed frame
 
   Free Bitmap 9
 
-  Bitmap 9, 105, 83, 5
-  LoadBitMap 9, "assets/title_neon.iff"
-  GetaShape 6,0,0,105,31 ; fire back
-  GetaShape 7,0,32,101,24 ; text neon 1
-  GetaShape 8,0,58,101,24 ; text neon 2
 
-  Free Bitmap 9
-
-  Bitmap 9, 320, 120, 5
 
   ;for BBlit
   Buffer 0,16384
@@ -525,9 +521,8 @@ End Statement
 
 .TitleScreen:
   flagsTS.l = $05
-  flagsTS2.l = $05
-  InitCopList 0,44,128,flagsTS,0,32,0
-  InitCopList 1,174,120,flagsTS2,0,32,0
+  InitCopList 0,44,128,flagsTS,8,4,0
+  InitCopList 1,131,251,flagsTS,8,4,0
   LoadPalette 3, "assets/title.iff" 
   InitPalette 4,32
   LoadPalette 5, "assets/hud.iff"
@@ -538,26 +533,20 @@ End Statement
   DisplayPalette 0, 4
   DisplayPalette 1, 5
   DisplayBitMap 0, 8
-  DisplayBitMap 1, 9
   Free BitMap 7
 
   Use BitMap 8
 
-  Blit 6,107,5 
-  Blit 8,108,9 
-
-  Use BitMap 9
-  Cls 0
-
   currentLevel=0
+
 
   menuX.w=70
   menuXPadding.w=40
   Dim menuY.w(4)
-  menuY(0)=10 
-  menuY(1)=30
-  menuY(2)=60
-  menuY(3)=75
+  menuY(0)=0 
+  menuY(1)=20
+  menuY(2)=50
+  menuY(3)=65
 
   PrintText{"Start",menuX,menuY(0)}
 
@@ -650,16 +639,27 @@ End Statement
             actionBuffer=#actionBuf
         End Select
       End If
-      If soundM=1:Sound 1,%1100,64:End If
+      If soundM=1:Sound 7,%1100,64:End If
     End If
     ;Update Display
-    paddingX.w=0
-    If (mi=1):paddingX=menuXPadding*(playerCursor+1):End If
-    BBlit 0,16+cursorB,menuX-6+paddingX,menuY(mi)
+    BBlit 0,16+cursorB,menuX-6,menuY(mi)
+    BBlit 0,19,menuX+menuXPadding*(playerCursor+1)-4,menuY(1)-2
     BBlit 0,18,menuX+menuXPadding*(chosenMode+1)-4,menuY(2)-2
     BBlit 0,18,menuX+menuXPadding*(chosenWorld+2)-4,menuY(3)-2
     For i.b=0 to 3
-      BBlit  0,#ShapeIndexHUDPlayer+chosenPlayer(i),menuX+menuXPadding*(i+1)+8,menuY(1)
+      Boxf menuX+menuXPadding*(i+1),menuY(1),menuX+menuXPadding*(i+1)+35,menuY(1)+5,0
+      Select chosenPlayer(i)
+        Case -1 ; Joy CPU
+          PrintText{"CPU",menuX+menuXPadding*(i+1),menuY(1)}
+        Case 0 ; Joy 2
+          PrintText{"Joy 2",menuX+menuXPadding*(i+1),menuY(1)}
+        Case 1 ; Joy 1
+          PrintText{"Joy 1",menuX+menuXPadding*(i+1),menuY(1)}
+        Case 2 ; Joy 3
+          PrintText{"Joy 3",menuX+menuXPadding*(i+1),menuY(1)}
+        Case 3 ; Joy 4
+          PrintText{"Joy 4",menuX+menuXPadding*(i+1),menuY(1)}
+      End Select
     Next
   Until (RawStatus($45))
   VWAIT 50

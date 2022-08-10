@@ -494,7 +494,7 @@ End Statement
   Bitmap 8, 320, 128, 5
   LoadBitMap 8, "assets/title.iff"
   
-  Bitmap 9, 100, 9, 5
+  Bitmap 9, 49, 9, 5
   LoadBitMap 9, "assets/title_elements.iff"
   GetaShape 16,0,0,3,5 ; cursor white
   GetaShape 17,4,0,3,5 ; cursor other
@@ -518,8 +518,8 @@ End Statement
 
   Use Bitmap 7
   for i.b = 0 to 50
-    Fadepalette 3, 0,1-i / 50
-    DisplayPalette 0, 3
+    Fadepalette 3, 4,1-i / 50
+    DisplayPalette 0, 4
     vwait
   next
 
@@ -536,7 +536,7 @@ End Statement
   Blitz
   CreateDisplay 0,1
   DisplayPalette 0, 4
-  DisplayPalette 1, 5
+  DisplayPalette 1, 0
   DisplayBitMap 0, 8
   DisplayBitMap 1, 9
   Free BitMap 7
@@ -583,6 +583,8 @@ End Statement
   For i.b = 0 to 50
     FadePalette 3, 4, i / 50
     DisplayPalette 0, 4
+    FadePalette 5, 0, i / 50
+    DisplayPalette 1, 0
     VWAIT
   Next
 
@@ -593,10 +595,22 @@ End Statement
   mi.b=0
   actionBuffer=0
   #actionBuf=6
+  titleBuffer=4
+  titleNeon=1
   Repeat
     VWAIT
     UnBuffer 0
     cursorB=0
+    soundM=0
+    If (titleBuffer>0)
+      titleBuffer=titleBuffer-1
+    Else
+      Use BitMap 8
+      Blit 7+titleNeon,108,9 
+      titleNeon=1-titleNeon
+      titleBuffer=Rnd(100)
+      Use BitMap 9
+    End If
     If (actionBuffer > 0)
       actionBuffer=actionBuffer-1
       cursorB=1
@@ -626,11 +640,34 @@ End Statement
               actionBuffer=#actionBuf
             Else
               cursorB=0
+              soundM=0
             End If
           Case 1
             If (btn)
               chosenPlayer(playerCursor)=chosenPlayer(playerCursor)+1
               If (chosenPlayer(playerCursor)>3):chosenPlayer(playerCursor)=-1:End If
+              For i.b=0 to 3 
+                If (i <> playerCursor AND chosenPlayer(i)<>-1) 
+                  If (playerCursor=0) ; player 1 can overrride
+                    If (chosenPlayer(playerCursor)=chosenPlayer(i))
+                      chosenPlayer(i)=-1
+                    End If
+                  Else
+                    If (chosenPlayer(playerCursor)=chosenPlayer(i))
+                      chosenPlayer(playerCursor)=chosenPlayer(playerCursor)+1
+                      If (chosenPlayer(playerCursor)>3):chosenPlayer(playerCursor)=-1:End If
+                    End If
+                    For j.b=0 to i-1 
+                        If (i <> j AND i <> playerCursor and j <> playerCursor AND chosenPlayer(j)<>-1) 
+                          If (chosenPlayer(playerCursor)=chosenPlayer(j))
+                            chosenPlayer(playerCursor)=chosenPlayer(playerCursor)+1
+                            If (chosenPlayer(playerCursor)>3):chosenPlayer(playerCursor)=-1:End If
+                          End If
+                        End If
+                      Next
+                  End If
+                End If
+              Next
               actionBuffer=#actionBuf
             Else
               playerCursor=playerCursor+dir
@@ -659,14 +696,35 @@ End Statement
     BBlit 0,18,menuX+menuXPadding*(chosenMode+1)-4,menuY(2)-2
     BBlit 0,18,menuX+menuXPadding*(chosenWorld+2)-4,menuY(3)-2
     For i.b=0 to 3
-      BBlit  0,#ShapeIndexHUDPlayer+chosenPlayer(i),menuX+menuXPadding*(i+1)+8,menuY(1)
+      cjoy.b=chosenPlayer(i)
+      If (cjoy >= 0 and cjoy < 2)
+        cjoy=1-cjoy ; invert because of port 2 as joy port on amiga
+      EndIf
+      BBlit  0,#ShapeIndexHUDPlayer+cjoy,menuX+menuXPadding*(i+1)+8,menuY(1)
     Next
   Until (RawStatus($45))
+  For i.b = 0 to 50
+    FadePalette 3, 4,1-i / 50
+    DisplayPalette 0, 4
+    FadePalette 5, 0,1-i / 50
+    DisplayPalette 1, 0
+    VWAIT
+  Next
   VWAIT 50
   AMIGA
   End
 
 .Game:
+
+  Blitz
+  For i.b = 0 to 50
+    FadePalette 3, 4,1-i / 50
+    DisplayPalette 0, 4
+    FadePalette 5, 0,1-i / 50
+    DisplayPalette 1, 0
+    VWAIT
+  next
+
   QAMIGA
   ;Init CopList
   flags0.l = $05
@@ -709,28 +767,28 @@ End Statement
         \x=16
         \y=16
         \direction=1
-        \joy=1
+        \joy=chosenPlayer(0)
         \avatar=0
       Case 1
         \dead=0
         \x=288
         \y=192
         \direction=3
-        \joy=0
+        \joy=chosenPlayer(1)
         \avatar=1
       Case 2
         \dead=0
         \x=288
         \y=16
         \direction=3
-        \joy=-1
+        \joy=chosenPlayer(2)
         \avatar=2
       Case 3
         \dead=0
         \x=16
         \y=192
         \direction=1
-        \joy=-1
+        \joy=chosenPlayer(3)
         \avatar=3
       End Select
     Next

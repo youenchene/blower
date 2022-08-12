@@ -1,0 +1,81 @@
+;Multitap Joy functions
+Function.b MJoyb{ji.b}
+    out.b=0
+    ; classic Joy
+    If (ji=0 OR ji=1)
+            out=Joyb(ji)
+    Else
+        If (ji=2 OR ji=3)
+            multitapaction.b = peek.b($bfd000)
+            If (ji=2)
+                out = (multitapaction AND $04) = 0
+            Else
+                out = (multitapaction AND $01) = 0
+            End If
+        End If
+    End If
+    Function Return out
+End Function
+
+Function.b MJoyx{ji.b}
+    out.b=0
+    ; classic Joy
+    If (ji=0 OR ji=1)
+            out=Joyx(ji)
+    Else
+        If (ji=2 OR ji=3)
+            multitapmovement = peek.b($bfe101)
+            If (ji=2)
+                out = (multitapmovement AND $04) = 0
+                If (NOT out)
+                    out = -1 * ((multitapmovement AND $08) = 0)
+                End If  
+            Else
+                out = (multitapmovement AND $40) = 0
+                If (NOT out)
+                    out = -1 * ((multitapmovement AND $80) = 0)
+                End If 
+            End If
+        End If
+    End If
+    Function Return out
+End Function
+
+Function.b MJoyy{ji.b}
+    out.b=0
+    ; classic Joy
+    If (ji=0 OR ji=1)
+            out=Joyy(ji)
+    Else
+       If (ji=2 OR ji=3)
+            multitapmovement = peek.b($bfe101)
+            If (ji=2)
+                out = (multitapmovement AND $01) = 0
+                If (NOT out)
+                    out = -1 * ((multitapmovement AND $02) = 0)
+                End If  
+            Else
+                out = (multitapmovement AND $10) = 0
+                If (NOT out)
+                    out = -1 * ((multitapmovement AND $20) = 0)
+                End If 
+            End If
+        End If
+    End If
+    Function Return out
+End Function
+
+
+; Demo
+;Repeat
+;    VWAIT
+;    If MJoyb{1}:Print "B1":End If
+;    If MJoyb{2}:Print "B2":End If
+;    If MJoyb{3}:Print "B3":End If
+;    If MJoyx{1}:Print "BX1(",MJoyx{1},")":End If
+;    If MJoyx{2}:Print "BX2(",MJoyx{2},")":End If
+;    If MJoyx{3}:Print "BX3(",MJoyx{3},")":End If
+;    If MJoyy{1}:Print "BY1(",MJoyy{1},")":End If
+;    If MJoyy{2}:Print "BY2(",MJoyy{2},")":End If
+;    If MJoyy{3}:Print "BY3(",MJoyy{3},")":End If
+;Until RawStatus($45)

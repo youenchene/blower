@@ -79,3 +79,4 @@ End Function
 ;    If MJoyy{2}:Print "BY2(",MJoyy{2},")":End If
 ;    If MJoyy{3}:Print "BY3(",MJoyy{3},")":End If
 ;Until RawStatus($45)
+

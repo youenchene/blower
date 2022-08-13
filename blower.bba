@@ -36,7 +36,7 @@ WBStartup
 DEFTYPE .b
 
 Amiga
-
+#Debug=0
 #skipIntro=1 ;1 to skip intro
 
 #mapWidth=20
@@ -48,7 +48,9 @@ Amiga
 #bulletPerPlayer=2
 #waitBullet=30
 #speedBullet=3
-#maxEnergy=15;
+#maxEnergy=15
+#bufferDirection=8
+#distanceCPU=23
 
 #ShapeIndexHUDAvatar=36
 #ShapeIndexHUDPlayer=27
@@ -99,6 +101,10 @@ NEWTYPE .player
   energy.b
   previousEnergy.b
   shot.b
+  targetPlayer.b
+  targetX.w
+  targetY.w
+  bufDirection.w
 End NEWTYPE 
 
 NEWTYPE .Bullet
@@ -468,14 +474,11 @@ End Statement
   LoadSound 7,"assets/snd/step-grass.iff"
   LoadSound 8,"assets/snd/step-road.iff"
 
-
-
   Use Bitmap 7
   Blitz
   PrintText{"Loading Title Screen...",10,136}
   QAMIGA
 
-    
   Bitmap 8, 320, 128, 5
   LoadBitMap 8, "assets/title.iff"
   
@@ -534,7 +537,7 @@ End Statement
   Use BitMap 9
   Cls 0
 
-  currentLevel=0
+  currentLevel=3;0
 
   menuX.w=70
   menuXPadding.w=40
@@ -840,6 +843,8 @@ End Statement
   \waitBullet=0
   \energy=#maxEnergy
   \previousEnergy=#maxEnergy
+  \targetPlayer=-1
+  \bufDirection=#bufferDirection
   Return
 
 .BuildWorld:
@@ -903,16 +908,15 @@ End Statement
   UnBuffer db
 
   For i=0 to (nbPlayer-1)
-  UsePath player(i)
-  If (\dead <> 1)
-
-    a=0
+    UsePath player(i)
+    ;If (\dead <> 1)
+      a=0
     If (\dead>0 OR \shot>0)
       ;Has been shoted anim
       If (\shot>0)
         a=50+\avatar*50+\direction*10
         \shot=\shot-1
-      else
+      Else
         If (\dead=2)
           \dead=\dead-1
           \x=\x-8
@@ -938,89 +942,99 @@ End Statement
           \waitBullet=\waitBullet-1
         EndIf
       EndIf
+
       ; Interaction
-      If (buttonOn=0) ;Move or shoot
-        If (currentJoy >= 0  AND currentJoy < 4)
+      If (buttonOn=0) ;Move or shoot  - 1 move
+        vJoyx.b=0
+        vJoyy.b=0
+        If (currentJoy >= 0  AND currentJoy < 4) ; player move
+          ;==== Player
           vJoyx.b=MJoyx{currentJoy}
           vJoyy.b=MJoyy{currentJoy}
           If (vJoyx <> 0 OR vJoyy <> 0)
-            if vJoyx=1
+            If vJoyx=1
               \direction=1
-            Endif 
-            if vJoyx=-1
+            End If 
+            If vJoyx=-1
               \direction=3
-            EndIf
-            if vJoyy=1
+            End If
+            If vJoyy=1
               \direction=2
-            EndIf
-            if vJoyy=-1
+            End If
+            If vJoyy=-1
               \direction=0
-            EndIf 
-            \frameCounter=\frameCounter+1
-            If (\frameCounter=\frameAnim)
-              ; next move
-              next_x.w=\x
-              next_y.w=\y
+            End If 
+          End If
+        Else ; or cpu move
+          Gosub CPUMove
+        End If
+        \frameCounter=\frameCounter+1
+        If (\frameCounter=\frameAnim)
+          ; next move
+          next_x.w=\x
+          next_y.w=\y
 
-              ;Wall Collision
-              If (\direction=1)
-                pa.w=Point(next_x+16,next_y+1)
-                pb.w=Point(next_x+16,next_y+14)
-              EndIf
-              If (\direction=3)
-                pa.w=Point(next_x-1,next_y+1)
-                pb.w=Point(next_x-1,next_y+14)
-              EndIf
-              If (\direction=0)
-                pa.w=Point(next_x+3,next_y-1)
-                pb.w=Point(next_x+12,next_y-1)
-              EndIf
-              If (\direction=2)
-                pa.w=Point(next_x+3,next_y+16)
-                pb.w=Point(next_x+12,next_y+16)
-              EndIf
+          ;Wall Collision
+          If (\direction=1)
+            pa.w=Point(next_x+16,next_y+1)
+            pb.w=Point(next_x+16,next_y+14)
+          End If
+          If (\direction=3)
+            pa.w=Point(next_x-1,next_y+1)
+            pb.w=Point(next_x-1,next_y+14)
+          End If
+          If (\direction=0)
+            pa.w=Point(next_x+3,next_y-1)
+            pb.w=Point(next_x+12,next_y-1)
+          End If
+          If (\direction=2)
+            pa.w=Point(next_x+3,next_y+16)
+            pb.w=Point(next_x+12,next_y+16)
+          End If
 
-              ;check colors in front of avatar
-              paValid.b=(pa <> #wallColor1 AND pa <> #wallColor2)
-              pbValid.b=(pb <> #wallColor1 AND pb <> #wallColor2)
+          ;check colors in front of avatar
+          paValid.b=(pa <> #wallColor1 AND pa <> #wallColor2)
+          pbValid.b=(pb <> #wallColor1 AND pb <> #wallColor2)
 
-              If (paValid=-1 AND pbValid=-1) ;Move
-                \x=\x+vJoyx*\stepsize
-                \y=\y+vJoyy*\stepsize
-              EndIf
-              If (paValid=-1 AND pbValid=0) ;Avoid obstacle
-                if (\direction=0 OR \direction=2)
-                  \x=\x-1
+          If (paValid=-1 AND pbValid=-1) ;Move
+            If (\direction=1 OR \direction=3)
+              \x=\x+vJoyx*\stepsize
+            End If
+            If (\direction=0 OR \direction=2)
+              \y=\y+vJoyy*\stepsize
+            End If
+          EndIf
+          If (paValid=-1 AND pbValid=0) ;Avoid obstacle
+            If (\direction=0 OR \direction=2)
+              \x=\x-1
+            Else
+              \y=\y-1
+            End If
+          EndIf
+          If (paValid=0 AND pbValid=-1) ;Avoid obstacle
+            if (\direction=0 OR \direction=2)
+              \x=\x+1
+            Else
+              \y=\y+1
+            End If
+          End If
+          ;Animation
+          \frameCounter=0
+          If (\animIndex = 3)
+            \animIndex=0
+              If AddItem(sndevents())
+                sndevents()\snd=5+currentWorld
+                sndevents()\vol=32
+                If \x >= 160
+                  sndevents()\side=1
                 Else
-                  \y=\y-1
-                EndIf
-              EndIf
-              If (paValid=0 AND pbValid=-1) ;Avoid obstacle
-                if (\direction=0 OR \direction=2)
-                  \x=\x+1
-                Else
-                  \y=\y+1
-                EndIf
-              EndIf
-              ;Animation
-              \frameCounter=0
-              If (\animIndex = 3)
-                \animIndex=0
-                 If AddItem(sndevents())
-                  sndevents()\snd=5+currentWorld
-                  sndevents()\vol=32
-                  If \x >= 160
-                    sndevents()\side=1
-                  Else
-                    sndevents()\side=0
-                  Endif
+                  sndevents()\side=0
                 End If
-              Else
-                \animIndex=\animIndex+1
-              Endif
-            Endif
+              End If
+          Else
+            \animIndex=\animIndex+1
           Endif
-        EndIf
+        Endif
       Else
         ; Fire
         \frameCounter=0
@@ -1062,23 +1076,22 @@ End Statement
                       sndevents()\side=1
                     Else
                       sndevents()\side=0
-                    Endif
+                    End If
                   End If
-                Endif
-              Endif
-            EndIf
-          EndIf
-        EndIf
-      EndIf
+                End If
+              End If
+            End If
+          End If
+        End If
+      End If
       a=\avatar*50+51+\direction*10+\animIndex
-    EndIf
+    End If
     ;draw bobs
     If (\x<16):\x=16:EndIf
     If (\x>288):\x=288:EndIf
     If (\y<16):\y=16:EndIf
     If (\y>192):\y=192:EndIf
     BBlit 0,a,\x,\y 
-  EndIf
   next
 
   ;Update and Draw Sprites
@@ -1188,6 +1201,8 @@ End Statement
 
   Wend
 
+
+  Use Bitmap 2
   ;HUD Update
   For p=0 to (nbPlayer-1)
     UsePath player(p)
@@ -1199,12 +1214,20 @@ End Statement
         If (\energy < 4)
           ahud=2
         EndIf
-        Use Bitmap 2
         Block #ShapeIndexHUDAvatar+ahud*4+\avatar,16+\avatar*64,0
         Boxf 32+\avatar*64,0,48+\avatar*64,15-\energy,0
         Boxf 32+\avatar*64,15-\energy,48+\avatar*64,15,30 
     EndIf
   Next
+  ;Debug
+  If #Debug
+  Boxf 256,0,319,15,0
+    PrintText{str$(player(2)\targetPlayer),256,0}
+    PrintText{str$(player(2)\direction),280,0}
+    PrintText{str$(player(2)\bufDirection),280,6}
+    PrintText{str$(player(2)\targetY),300,0}
+    PrintText{str$(player(2)\targetX),300,6}
+  End If
 
   ;Process sounds
   USEPATH sndevents()
@@ -1224,30 +1247,115 @@ End Statement
   Wend
   Return
 
-;.WriteText:
-;  counter.b = 0
-;  textLen.b=Len(text$)
-;  Dim display.b(textLen)  
-;  For i.b = 1 To textLen
-;      oneString$ = Mid$(text$, i, 1)
-;      oneAsc = Asc(oneString$)
-;      newAsc= oneAsc-48
-;      if newAsc>17:newAsc=newAsc-7:End If
-;      if newAsc>36:newAsc=newAsc-32:End If
-;      Select oneAsc
-;        Case 32
-;          newAsc=60
-;        Case 46
-;          newAsc=36
-;        Case 58
-;          newAsc=40
-;      End Select
-;      display(counter) = newAsc
-;      counter = counter + 1
-;  Next i
-;  Blitz
-;  For i.b = 0 To counter-1
-;      Blit 250+display(i), textX+(i*4), textY
-;  Next i
-; Return
+
+.CPUMove
+  UsePath player(i)
+  deltaX.w=0
+  deltaY.w=0
+  ;Target player to shoot
+  If (\targetPlayer=-1)
+      For p=0 to nbPlayer-1
+        If (p<>i AND \targetPlayer = -1)
+            If (player(i)\dead = 0)
+              target.b=Rnd(2)
+              If (target=1) 
+                  \targetPlayer=p
+              End If
+            End If
+        End If
+      Next
+  End If
+  ;Check if dead
+  If (\targetPlayer>=0)
+    If (player(\targetPlayer)\dead> 0)
+      \targetPlayer=-1
+    End If
+  End If
+  ; Move
+  If (\targetPlayer>=0) ; if a player is targeted : compute move
+    ; directionb buffer
+    \bufDirection=\bufDirection-1
+
+    \targetX=player(\targetPlayer)\x
+    \targetY=player(\targetPlayer)\y
+
+    deltaX=\x-\targetX
+    deltaY=\y-\targetY
+
+    If (\bufDirection=0)
+
+
+      dirX.b=0
+      dirY.b=0
+      If (deltaX>0):dirX=-1:Else:dirX=1:End If
+      If (deltaY>0):dirY=-1:Else:dirY=1:End If
+
+      ;Buffer =0 change direction
+      changeDirection.b=0
+
+      If (\direction=1 OR \direction=3)
+        If (Abs(deltaY)>Abs(deltaX) AND Abs(deltaY)>#distanceCPU)
+          changeDirection=-1
+        End If
+      End If
+      If (\direction=0 OR \direction=2)
+        If (Abs(deltaX)>Abs(deltaY) AND Abs(deltaX)>#distanceCPU)
+          changeDirection=-1
+        End If
+      End If
+
+      If (changeDirection)
+        If (\direction=1 OR \direction=3)
+          If (dirY=1)
+            \direction=2
+          End If
+          If (dirY=-1)
+            \direction=0
+          End If
+        Else
+          If (\direction=0 OR \direction=2)
+            If (dirX=1)
+              \direction=1
+            End If 
+            If (dirX=-1)
+              \direction=3
+            End If
+          End If
+        End If
+      Else
+        If (\direction=1 OR \direction=3)
+          If (dirX=1)
+            \direction=1
+          End If
+          If (dirX=-1)
+            \direction=3
+          End If
+        Else
+          If (\direction=0 OR \direction=2)
+            If (dirY=1)
+              \direction=2
+            End If 
+            If (dirY=-1)
+              \direction=0
+            End If
+          End If
+        End If
+      End If
+      ;STOP
+      \bufDirection=#bufferDirection
+    End If
+    Select \direction
+      Case 0
+       If (Abs(deltaY)>#distanceCPU):vJoyy=-1:End If
+      Case 1
+        If (Abs(deltaX)>#distanceCPU):vJoyx=1:End If
+      Case 2
+        If (Abs(deltaY)>#distanceCPU):vJoyy=1:End If
+      Case 3
+        If (Abs(deltaX)>#distanceCPU):vJoyx=-1:End If
+    End Select 
+    
+  End If
+  Return
+
 

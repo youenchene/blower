@@ -110,6 +110,7 @@ NEWTYPE .player
   bufDirection.w
   deltaX.w
   deltaY.w
+  score.b
 End NEWTYPE 
 
 NEWTYPE .Bullet
@@ -840,7 +841,7 @@ End Statement
     ;Who won?
     If (remainingPlayers<2)
       winner.b=-1
-      Use Bitmap db
+      Use Bitmap 1-db
       Cls 0
       Use Bitmap 2
       Cls 0
@@ -855,20 +856,21 @@ End Statement
           Block #ShapeIndexHUDPlayer+cjoy,48,0
           Block #ShapeIndexHUDAvatar+i,16+48,0
           PrintText{"Player "+str$(i+1)+" WON!",48+42,6}
-          Use Bitmap db
+          Use Bitmap 1-db
           a.w=\avatar*50+51+\direction*10+\animIndex
           Blit a,\x,\y 
+          \score=\score+1
           winner=i
         Else
-          Use Bitmap db
+          Use Bitmap 1-db
           a.w=\avatar*50+90
           Blit a,\x,\y 
         End If
       Next
-      CopyBitMap db, 1-db
+      CopyBitMap 1-db, db
       VWait 50
       fb.b=1
-      bufferTxt.b=25
+      bufferTxt.b=50
       Repeat
         vwait
         DisplayBitMap 1,db
@@ -878,12 +880,35 @@ End Statement
           bufferTxt=25
           Use Bitmap 2
           If (fb=1)
-            PrintText{"Press Joy1 button or ESC to continue...",160,6}
+            PrintText{"Press Joy1 button to continue...",180,6}
           Else
-            Boxf 160,5,319,13,0
+            Boxf 180,5,319,13,0
           End If
         End If
-      Until (RawStatus($45) OR MJoyb{1}) ; Escape pressed or button opressed
+      Until (RawStatus($45) OR (MJoyb{1} AND bufferTxt<26)) ; Escape pressed or button opressed
+
+      bufferTxt.b=80
+      Use Bitmap 2
+      Cls 0
+      For p=0 to (nbPlayer-1)
+        UsePath player(p)
+        Block #ShapeIndexHUDAvatar+\avatar,\avatar*32,0
+        PrintText{str$(\score),19+\avatar*32,6}
+      Next
+      Repeat
+        vwait
+        bufferTxt=bufferTxt-1
+        If (bufferTxt=0)
+          fb=1-fb
+          bufferTxt=25
+          Use Bitmap 2
+          If (fb=1)
+            PrintText{"Press Joy1 button to continue...",180,6}
+          Else
+            Boxf 180,5,319,13,0
+          End If
+        End If
+      Until (RawStatus($45) OR (MJoyb{1} AND bufferTxt<26)) ; Escape pressed or button opressed
     End If
     FlushBuffer 0
     FlushBuffer 1

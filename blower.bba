@@ -47,11 +47,13 @@ Amiga
 #endAnimCount=8
 #bulletPerPlayer=2
 #waitBullet=30
+#waitBulletCPU=90
 #speedBullet=3
 #maxEnergy=15
 #bufferDirection=8
 #bufferDirectionWall=120
-#distanceCPU=16
+#distanceCPU=8
+#distanceCPUShot=16
 
 #ShapeIndexHUDAvatar=36
 #ShapeIndexHUDPlayer=27
@@ -945,7 +947,40 @@ End Statement
         If (\waitBullet>0)
           \waitBullet=\waitBullet-1
         EndIf
-      EndIf
+      Else ;CPU Shoot
+        If (\waitBullet>0)
+          \waitBullet=\waitBullet-1
+        Else
+          If (\bullets>0)
+            Select \direction
+              Case 0
+                If (Abs(\deltaX)<#distanceCPUShot)
+                  If (\deltaY>0)
+                    buttonOn=1
+                  End If
+                End If
+              Case 1
+                If (Abs(\deltaY)<#distanceCPUShot)
+                  If (\deltaX<0)
+                    buttonOn=1
+                  End If
+                End If
+              Case 2
+                If (Abs(\deltaX)<#distanceCPUShot)
+                  If (\deltaY<0)
+                    buttonOn=1
+                  End If
+                End If
+              Case 3
+                If (Abs(\deltaY)<#distanceCPUShot)
+                  If (\deltaX>0)
+                    buttonOn=1
+                  End If
+                End If
+            End Select
+          End If
+       End If
+      End If
 
       ; Interaction
       If (buttonOn=0) ;Move or shoot  - 1 move
@@ -1129,7 +1164,6 @@ End Statement
         \frameCounter=0
         \animIndex=0
         If (\waitBullet<=0)
-          If (currentJoy >= 0  AND currentJoy < 4)
             If (buttonOn)
               If (\bullets>0)
                 If AddItem(bullets())
@@ -1157,7 +1191,11 @@ End Statement
                   bullets()\endLife=-1
                   bullets()\channel=2-\bullets
                   bullets()\srcAvatar=\avatar
-                  \waitBullet=#waitBullet
+                  if (currentJoy=-1)
+                    \waitBullet=#waitBulletCPU
+                  Else
+                    \waitBullet=#waitBullet
+                  End If
                   \bullets=\bullets-1
                   If AddItem(sndevents())
                     sndevents()\snd=0
@@ -1170,7 +1208,7 @@ End Statement
                 End If
               End If
             End If
-          End If
+
         End If
       End If
       a=\avatar*50+51+\direction*10+\animIndex
@@ -1263,6 +1301,11 @@ End Statement
                 player(p)\previousEnergy=player(p)\energy
                 player(p)\energy=player(p)\energy-energyBulletImpact
                 player(p)\shot=#shotAnim
+                ; CPU if been shot new target is the avatar who shot teh CPU
+                If player(p)\joy=-1
+                  player(p)\targetPlayer=\srcAvatar
+                End If
+                ;End CPU
                 If AddItem(sndevents())
                   sndevents()\snd=3
                   If \x >= 160
@@ -1433,16 +1476,18 @@ End Statement
       ;STOP
       \bufDirection=#bufferDirection
     End If
-    Select \direction
-      Case 0
-       If (Abs(\deltaY)>#distanceCPU):vJoyy=-1:End If
-      Case 1
-        If (Abs(\deltaX)>#distanceCPU):vJoyx=1:End If
-      Case 2
-        If (Abs(\deltaY)>#distanceCPU):vJoyy=1:End If
-      Case 3
-        If (Abs(\deltaX)>#distanceCPU):vJoyx=-1:End If
-    End Select
+    If ((Abs(\deltaY)>#distanceCPU) OR (Abs(\deltaY)>#distanceCPU))
+      Select \direction
+        Case 0
+          vJoyy=-1
+        Case 1
+          vJoyx=1
+        Case 2
+          vJoyy=1
+        Case 3
+          vJoyx=-1
+      End Select
+    End If
   End If
   Return
 

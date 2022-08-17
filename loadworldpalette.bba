@@ -1,0 +1,15 @@
+
+ If WriteFile(0,"paletteworld.data");save data to file
+      FileOutput 0
+        For j.b=1 to 4
+            LoadPalette 0,"assets/world"+str$(j)+".iff"
+            NPrint ";World",j
+            PaletteInfo 0
+            For i.b=1 to 8
+                NPrint "PalRGB 1,",i,",",PalRed(i),",",PalGreen(i),",",PalBlue(i)
+            Next
+        Next
+      CloseFile 0
+    Endif
+
+

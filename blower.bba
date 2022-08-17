@@ -28,6 +28,8 @@
 ;  100-140 Avatar 2
 ;  150-190 Avatar 3
 ;  100-140 Avatar 4
+;  250-350 Font
+;  351-362 Bullets
 ;****************************************
 
 ;NoCli
@@ -57,11 +59,12 @@ Amiga
 
 #ShapeIndexHUDAvatar=36
 #ShapeIndexHUDPlayer=27
+#ShapeIndexBullet=320
 
-#wallColor1=3
-#wallColor2=4
-#avatarColor1=5
-#avatarColor2=31
+#wallColor1=5
+#wallColor2=8
+#avatarColor1=9
+#avatarColor2=23
 
 #energyBulletImpactNormal=1
 #energyBulletImpact1=15
@@ -175,32 +178,42 @@ End Statement
 Statement PaletteWorld{n}
   Select n
     Case 0
-      PalRGB 1,1,15,12,6  
-      PalRGB 1,2,9,6,1  
-      PalRGB 1,3,0,15,3  
-      PalRGB 1,4,12,12,12  
-    Case 2
-      PalRGB 1,1,0,15,3  
-      PalRGB 1,2,15,12,6  
-      PalRGB 1,3,9,3,0  
-      PalRGB 1,4,0,6,3  
-    Case 3  
-      PalRGB 1,1,9,9,9  
-      PalRGB 1,2,6,6,6  
-      PalRGB 1,3,12,9,6  
-      PalRGB 1,4,9,6,0   
-    Default ;also case 1
-      PalRGB 1,1,0,6,6  
-      PalRGB 1,2,0,6,12  
-      PalRGB 1,3,5,5,5  
-      PalRGB 1,4,9,9,9  
-  End Select
-  ;Sprite Colorbullets
-  For i=0 to 3
-    PalRGB 1,16+i*4+1,0,0,0
-    PalRGB 1,16+i*4+2,7,7,7  
-    PalRGB 1,16+i*4+3,14,14,14  
-  Next  
+      PalRGB 1,1,15,15,0
+      PalRGB 1,2,12,15,12
+      PalRGB 1,3,15,9,4
+      PalRGB 1,4,15,12,7
+      PalRGB 1,5,12,12,12
+      PalRGB 1,6,9,9,8
+      PalRGB 1,7,0,15,3
+      PalRGB 1,8,0,12,6
+    Case 1
+      PalRGB 1,1,0,6,6
+      PalRGB 1,2,0,6,12
+      PalRGB 1,3,0,0,0
+      PalRGB 1,4,0,0,0
+      PalRGB 1,5,3,3,3
+      PalRGB 1,6,6,6,6
+      PalRGB 1,7,9,9,9
+      PalRGB 1,8,9,9,9
+    Case 2 
+      PalRGB 1,1,0,15,3
+      PalRGB 1,2,3,9,3
+      PalRGB 1,3,0,12,6
+      PalRGB 1,4,15,9,5
+      PalRGB 1,5,9,9,8
+      PalRGB 1,6,13,12,10
+      PalRGB 1,7,0,6,3
+      PalRGB 1,8,9,3,0 
+    Case 3
+      PalRGB 1,1,12,12,12
+      PalRGB 1,2,9,9,6
+      PalRGB 1,3,9,9,9
+      PalRGB 1,4,6,6,6
+      PalRGB 1,5,9,6,4
+      PalRGB 1,6,12,9,5
+      PalRGB 1,7,8,3,1
+      PalRGB 1,8,9,6,0
+    End Select 
 End Statement
 
 
@@ -290,17 +303,17 @@ End Statement
   Bitmap 0,320,224,5; db0
   Bitmap 1,320,224,5; db1
   Bitmap 2,320,16,5 ;hud 
-
-  Bitmap 3, 80, 256, 5 ;Bobs 
-  Bitmap 4, 32, 32, 3 ;World 1 
-  Bitmap 5, 48, 8, 2 ;Bullets Sprite 
+  ;src
+  Bitmap 9, 80, 320, 5 ;Bobs 
+  Bitmap 4, 32, 32, 4 ;World
   Bitmap 6, 64, 81, 5 ;HUD
+
 
   Bitmap 8, 244, 15, 2 ;Font
   LoadBitMap 8, "assets/font01.iff"
 
   for i.b=0 to 60
-      GetaShape 250+i,4*i,5,3,5
+    GetaShape 250+i,4*i,5,3,5
   next
   Free Bitmap 8
 
@@ -322,9 +335,9 @@ End Statement
   ; Load Tile
   Use Bitmap 4
   GetaShape 11,0,0,16,16
-  GetaShape 13,0,16,16,16
   GetaShape 12,16,0,16,16
   GetaShape 14,16,16,16,16
+  GetaShape 13,0,16,16,16
 
   LoadBitMap 4, "assets/world3.iff"
   ; Load Tile
@@ -344,19 +357,18 @@ End Statement
 
   Free Bitmap 4
 
-
   Use Bitmap 7
   Delay_ 50
   Blitz
   PrintText{"Loading Sprites and Bobs...",10,106}
   QAMIGA
 
-  LoadBitMap 3, "assets/avatars.iff"
+  LoadBitMap 9, "assets/bobs.iff"
 
   ; Anim
   ;0 : shooted animation
   ;1-4 : walk animation
-  Use Bitmap 3
+  Use Bitmap 9
   for j.b=0 to 3
     avatarIndex.w=j*50
     yIndex.w=j*64
@@ -387,43 +399,31 @@ End Statement
     GetaShape avatarIndex+90,0,yIndex+48,32,16 ;shot
   next
 
-  Free BitMap 3
-
   ; Bullet Sprite
-
-  LoadBitMap 5, "assets/bullet.iff"
-  Use Bitmap 5
-  GetaShape 0,0,0,1,1
-  GetaSprite 0,0
-
   ;up & down
-  GetaShape 0,24,4,7,4
-  GetaSprite 7,0
-  YFlip 0
-  GetaSprite 1,0
-  GetaShape 0,35,0,2,4
-  GetaSprite 8,0
-  YFlip 0
-  GetaSprite 2,0
-  GetaShape 0,40,1,6,7
-  GetaSprite 9,0
-  YFlip 0
-  GetaSprite 3,0
-  ;right & left
-  GetaShape 0,0,0,4,7
-  GetaSprite 4,0
-  XFlip 0
-  GetaSprite 10,0
-  GetaShape 0,10,3,4,2
-  GetaSprite 5,0
-  XFlip 0
-  GetaSprite 11,0
-  GetaShape 0,17,1,7,6
-  GetaSprite 6,0
-  XFlip 0
-  GetaSprite 12,0
 
-  Free BitMap 5
+  GetaShape #ShapeIndexBullet+7,24,308,7,4
+  CopyShape #ShapeIndexBullet+7,#ShapeIndexBullet+1
+  YFlip #ShapeIndexBullet+1
+  GetaShape #ShapeIndexBullet+8,35,304,2,4
+  CopyShape #ShapeIndexBullet+8,#ShapeIndexBullet+2
+  YFlip #ShapeIndexBullet+2
+  GetaShape #ShapeIndexBullet+9,40,306,6,7
+  CopyShape #ShapeIndexBullet+9,#ShapeIndexBullet+3
+  YFlip #ShapeIndexBullet+3
+
+  ;right & left
+  GetaShape #ShapeIndexBullet+4,0,4,4,7
+  CopyShape #ShapeIndexBullet+4,#ShapeIndexBullet+10
+  XFlip #ShapeIndexBullet+10
+  GetaShape #ShapeIndexBullet+5,10,307,4,2
+  CopyShape #ShapeIndexBullet+5,#ShapeIndexBullet+11
+  XFlip #ShapeIndexBullet+11
+  GetaShape #ShapeIndexBullet+6,17,305,7,6
+  CopyShape #ShapeIndexBullet+6,#ShapeIndexBullet+12
+  XFlip #ShapeIndexBullet+12
+
+  Free BitMap 9
 
   Dim levels.Level(#levelsCount)
   GoSub LoadLevels
@@ -458,7 +458,7 @@ End Statement
 
   InitPalette 0,32
   InitPalette 1,32
-  LoadPalette 1, "assets/blower.pal"
+  LoadPalette 1, "assets/bobs.iff"
   PalRGB 1,0,0,0,0  ;Reset T0 color to black
 
 
@@ -932,7 +932,7 @@ End Statement
 
   For i=0 to (nbPlayer-1)
     UsePath player(i)
-    ;If (\dead <> 1)
+    If (\dead <> 1)
       a=0
     If (\dead>0 OR \shot>0)
       ;Has been shoted anim
@@ -941,6 +941,7 @@ End Statement
         \shot=\shot-1
       Else
         If (\dead=2)
+          a=50+\avatar*50+40
           \dead=\dead-1
           \x=\x-8
           If (\x>272):\x=272:EndIf
@@ -1050,8 +1051,8 @@ End Statement
             End If
 
             ;check colors in front of avatar
-            paValid.b=(pa <> #wallColor1 AND pa <> #wallColor2)
-            pbValid.b=(pb <> #wallColor1 AND pb <> #wallColor2)
+            paValid.b=(pa < #wallColor1 OR pa > #wallColor2)
+            pbValid.b=(pb < #wallColor1 OR pb > #wallColor2)
 
             ; CPU behavior on wall it
             If currentJoy<0
@@ -1073,7 +1074,7 @@ End Statement
                       Case 3
                         pw=Point(next_x-8,next_y+12)
                     End Select
-                    cdir=(pw <> #wallColor1 AND pw <> #wallColor2)
+                    cdir=(pw < #wallColor1 OR pw > #wallColor2)
                     If cdir
                       nbDir=nbDir+1
                       If (d1 = -1)
@@ -1235,8 +1236,11 @@ End Statement
     If (\x>288):\x=288:EndIf
     If (\y<16):\y=16:EndIf
     If (\y>192):\y=192:EndIf
+
     BBlit db,a,\x,\y 
+    End If
   next
+
 
   ;Update and Draw Sprites
   USEPATH bullets()
@@ -1274,7 +1278,7 @@ End Statement
         If (\x>304):\x=295:bound=-1:EndIf
         If (\y>208):\y=200:bound=-1:EndIf
         ;Collision with wall
-        If (dot=#wallColor1 OR dot=#wallColor2 OR bound.b=-1)
+        If ((dot>=#wallColor1 AND dot<=#wallColor2) OR bound.b=-1)
          bullets()\endLife=#endAnimCount
          If AddItem(sndevents())
             sndevents()\snd=2
@@ -1341,9 +1345,8 @@ End Statement
       EndIf
     Endif
     ;Display
-    DisplaySprite 1,1+\direction*3+\animIndex,xb,yb,\player*2+\channel
+    BBlit db,#ShapeIndexBullet+1+\direction*3+\animIndex,xb,yb,\player*2+\channel
     If (\endLife=0)
-      DisplaySprite 1,0,\x,\y1,\player*2+\channel
       player(\player)\bullets=player(\player)\bullets+1
       KillItem bullets()  
     Endif

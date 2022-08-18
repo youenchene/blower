@@ -29,14 +29,14 @@
 ;  150-190 Avatar 3
 ;  100-140 Avatar 4
 ;  250-350 Font
-;  351-362 Bullets
+;  320-362 Bullets
 ;****************************************
 
 ;NoCli
 WBStartup
 
-DEFTYPE .b
 
+DEFTYPE .b
 Amiga
 #Debug=0
 #skipIntro=1 ;1 to skip intro
@@ -51,6 +51,8 @@ Amiga
 #waitBullet=30
 #waitBulletCPU=90
 #speedBullet=3
+#stepSizeDefault=3
+#stepSizeBoost=5
 #maxEnergy=15
 #bufferDirection=8
 #bufferDirectionWall=120
@@ -60,6 +62,7 @@ Amiga
 #ShapeIndexHUDAvatar=36
 #ShapeIndexHUDPlayer=27
 #ShapeIndexBullet=320
+#ShapeIndexBonus=335
 
 #wallColor1=5
 #wallColor2=8
@@ -71,6 +74,7 @@ Amiga
 #energyBulletImpact2=8
 energyBulletImpact=#energyBulletImpactNormal
 #shotAnim=6
+#timerBonusInit=200 ; 4sec
 
 
 chosenWorld.b=-1
@@ -114,6 +118,10 @@ NEWTYPE .player
   deltaX.w
   deltaY.w
   score.w
+  bulletImpact.b
+  timerBonus.w
+  invincible.b
+  flameThrower.b
 End NEWTYPE 
 
 NEWTYPE .Bullet
@@ -131,13 +139,27 @@ NEWTYPE .Bullet
   endLife.b
   channel.b
   srcAvatar.b
+  bulletImpact.b
 End NEWTYPE 
+
+NEWTYPE .Bonus
+  shapeIndex.b ;0:Energy 1:Flamethrower 2:Random 3:Invincible 4:OneShot 5:Speed 6:2Shots
+  x.w
+  y.w
+End NEWTYPE
 
 NEWTYPE .SndEvent
   snd.b
   side.b ; 0 for left 1 for right
   vol.b
 End NEWTYPE
+
+Dim bonusTimer(5)
+bonusTimer(0)=30
+bonusTimer(1)=20
+bonusTimer(2)=15
+bonusTimer(3)=10
+bonusTimer(4)=5
 
 
 XINCLUDE MJoy.bb2
@@ -305,7 +327,6 @@ End Statement
   Bitmap 2,320,16,5 ;hud 
   ;src
   Bitmap 9, 80, 320, 5 ;Bobs 
-  Bitmap 4, 32, 32, 4 ;World
   Bitmap 6, 64, 81, 5 ;HUD
 
 
@@ -323,6 +344,7 @@ End Statement
   PrintText{"Loading Worlds...",10,100}
   QAMIGA
 
+  Bitmap 4, 32, 32, 4 ;World
   LoadBitMap 4, "assets/world1.iff"
   ; Load Tile
   Use Bitmap 4
@@ -330,7 +352,9 @@ End Statement
   GetaShape 3,0,16,16,16
   GetaShape 2,16,0,16,16
   GetaShape 4,16,16,16,16
+  Free Bitmap 4
 
+  Bitmap 4, 32, 32, 4 ;World
   LoadBitMap 4, "assets/world2.iff"
   ; Load Tile
   Use Bitmap 4
@@ -339,6 +363,8 @@ End Statement
   GetaShape 14,16,16,16,16
   GetaShape 13,0,16,16,16
 
+
+  Bitmap 4, 32, 32, 4 ;World
   LoadBitMap 4, "assets/world3.iff"
   ; Load Tile
   Use Bitmap 4
@@ -346,7 +372,10 @@ End Statement
   GetaShape 23,0,16,16,16
   GetaShape 22,16,0,16,16
   GetaShape 24,16,16,16,16
+  Free Bitmap 4
 
+
+  Bitmap 4, 32, 32, 4 ;World
   LoadBitMap 4, "assets/world4.iff"
   ; Load Tile
   Use Bitmap 4
@@ -354,7 +383,6 @@ End Statement
   GetaShape 33,0,16,16,16
   GetaShape 32,16,0,16,16
   GetaShape 34,16,16,16,16
-
   Free Bitmap 4
 
   Use Bitmap 7
@@ -401,7 +429,6 @@ End Statement
 
   ; Bullet Sprite
   ;up & down
-
   GetaShape #ShapeIndexBullet+7,24,308,7,4
   CopyShape #ShapeIndexBullet+7,#ShapeIndexBullet+1
   YFlip #ShapeIndexBullet+1
@@ -422,6 +449,14 @@ End Statement
   GetaShape #ShapeIndexBullet+6,17,305,7,6
   CopyShape #ShapeIndexBullet+6,#ShapeIndexBullet+12
   XFlip #ShapeIndexBullet+12
+
+  ;Bonus
+  For i=0 to 4
+    GetaShape #ShapeIndexBonus+i,16*i,272,16,16 
+  Next
+  For i=3 to 4
+    GetaShape #ShapeIndexBonus+5+i-3,16*i,288,16,16 
+  Next
 
   Free BitMap 9
 
@@ -736,10 +771,7 @@ End Statement
   nbPlayer.b=4
   Dim player.player(nbPlayer)
 
-  For i.b=0 to (nbPlayer-1)
-    cp.b=i
-    Gosub InitPlayer
-  Next
+
 
   ;Game Mode  
   Select chosenMode
@@ -750,6 +782,11 @@ End Statement
     Default 
       energyBulletImpact=#energyBulletImpactNormal
   End Select
+
+  For i.b=0 to (nbPlayer-1)
+    cp.b=i
+    Gosub InitPlayer
+  Next
  
   remainingLevels.b=#levelsCount
   Repeat
@@ -831,6 +868,14 @@ End Statement
     Dim List bullets.Bullet(8)
 
     Dim List sndevents.SndEvent(8)
+    
+
+    Dim List bonus.Bonus(8) ;concurrent bonus
+    bonusCounter.b=0 ;bonus number
+    bonusTimerBuffer.l=bonusTimer(bonusCounter) ; current bonus timer buffer
+
+    timing.l=0 ; timing in second
+    timerbuffer.b=0 ; buffer of 50 for 1 second
 
     DisplayPalette 1,1
     db.b=0 ;double buffering
@@ -859,13 +904,18 @@ End Statement
   \animIndex=0
   \frameAnim=4
   \frameCounter=0
-  \stepsize=3
+  \stepsize=#stepSizeDefault
   \bullets=#bulletPerPlayer
   \waitBullet=0
   \energy=#maxEnergy
   \previousEnergy=#maxEnergy
   \targetPlayer=-1
   \bufDirection=#bufferDirection
+  \bulletImpact=energyBulletImpact
+  \stepsize=#stepSizeDefault
+  \invincible=0
+  \flameThrower=0
+  \timerBonus=0
   Return
 
 .BuildWorld:
@@ -910,6 +960,13 @@ End Statement
   BLITZ
   VWait
   DisplayBitMap 1,db
+  timerBuffer=timerBuffer+1
+  timingUpdate.b=0
+  If (timerBuffer=50)
+    timerBuffer=0
+    timing=timing+1
+    timingUpdate.b=1
+  End If
   ; manage double buffering
   db=1-db
   Use Bitmap db
@@ -929,6 +986,47 @@ End Statement
   Next 
 
   UnBuffer db
+
+  ;Display Bonus
+  USEPATH bonus()
+  ResetList bonus()
+  While NextItem(bonus())
+    BBlit db,#ShapeIndexBonus+\shapeIndex,\x,\y
+    For p=0 to (nbPlayer-1)
+      If ((\x+8) LSR 4) = ((player(p)\x+8) LSR 4)
+        If ((\y+8) LSR 4) = ((player(p)\y+8) LSR 4)
+          If \shapeIndex=2
+            \shapeIndex=Rnd(7)
+            If \shapeIndex>1
+              \shapeIndex=\shapeIndex+1
+            End If
+          End If
+          Select \shapeIndex
+            Case 0 ; Energy
+              player(p)\energy=15
+            Case 1 ; FlameThrower
+              player(p)\flameThrower=1
+              player(p)\timerBonus=#timerBonusInit
+            Case 3 ; Invincible
+              player(p)\invincible=1
+              player(p)\timerBonus=#timerBonusInit
+            Case 4 ; 1 shots
+              player(p)\bulletImpact=#energyBulletImpact1
+              player(p)\timerBonus=#timerBonusInit
+            Case 5 ; Speed
+              player(p)\stepsize=#stepSizeBoost
+              player(p)\timerBonus=#timerBonusInit
+            Case 6 ; 2shots
+              player(p)\bulletImpact=#energyBulletImpact2
+              player(p)\timerBonus=#timerBonusInit
+          End Select
+          KillItem bonus()
+          p=nbPlayer ; exit loop
+        End If
+      End If
+    Next
+  Wend
+
 
   For i=0 to (nbPlayer-1)
     UsePath player(i)
@@ -956,6 +1054,19 @@ End Statement
         EndIf
       EndIf
     Else
+
+      ; Manage End of bonus
+      If (\timerBonus > 0)
+        \timerBonus=\timerBonus-1
+        If (\timerBonus=0)
+          ; End of bonus timer
+          \bulletImpact=energyBulletImpact
+          \stepsize=#stepSizeDefault
+          \invincible=0
+          \flameThrower=0
+        End If
+      End If
+
       currentJoy.b=\joy
 
       If (currentJoy >= 0  AND currentJoy < 4)
@@ -1209,6 +1320,7 @@ End Statement
                   bullets()\endLife=-1
                   bullets()\channel=2-\bullets
                   bullets()\srcAvatar=\avatar
+                  bullets()\bulletImpact=\bulletImpact
                   if (currentJoy=-1)
                     \waitBullet=#waitBulletCPU
                   Else
@@ -1216,7 +1328,11 @@ End Statement
                   End If
                   \bullets=\bullets-1
                   If AddItem(sndevents())
-                    sndevents()\snd=0
+                    If (\bulletImpact>6)
+                      sndevents()\snd=1
+                    Else
+                      sndevents()\snd=0
+                    End If
                     If \x >= 160
                       sndevents()\side=1
                     Else
@@ -1236,8 +1352,13 @@ End Statement
     If (\x>288):\x=288:EndIf
     If (\y<16):\y=16:EndIf
     If (\y>192):\y=192:EndIf
-
-    BBlit db,a,\x,\y 
+    If (\invincible=0)
+      BBlit db,a,\x,\y 
+    Else
+      If (db=0)
+        BBlit db,a,\x,\y  ;blinking if invincible
+      End If
+    End If
     End If
   next
 
@@ -1315,28 +1436,30 @@ End Statement
         ;Box xb-7,yb-7,xb-7+14,yb-7+14,8;debug
         For p=0 to (nbPlayer-1)
           If (\srcAvatar <> player(p)\avatar)
-            If (player(p)\dead = 0) ; not dead
-              ;Box player(p)\x,player(p)\y,player(p)\x+16,player(p)\y+16,9;debug
-              If RectsHit(xb-7,yb-7,14,14,player(p)\x,player(p)\y,16,16) ; larger to void more calculus
-                bullets()\endLife=#endAnimCount ; End bullet
-                player(p)\previousEnergy=player(p)\energy
-                player(p)\energy=player(p)\energy-energyBulletImpact
-                player(p)\shot=#shotAnim
-                ; CPU if been shot new target is the avatar who shot teh CPU
-                If player(p)\joy=-1
-                  player(p)\targetPlayer=\srcAvatar
-                End If
-                ;End CPU
-                If AddItem(sndevents())
-                  sndevents()\snd=3
-                  If \x >= 160
-                    sndevents()\side=1
-                  Else
-                    sndevents()\side=0
-                  Endif
-                End If
-                If (player(p)\energy <= 0)
-                  player(p)\dead=2
+            If (player(p)\invincible=0)
+              If (player(p)\dead = 0) ; not dead
+                ;Box player(p)\x,player(p)\y,player(p)\x+16,player(p)\y+16,9;debug
+                If RectsHit(xb-7,yb-7,14,14,player(p)\x,player(p)\y,16,16) ; larger to void more calculus
+                  bullets()\endLife=#endAnimCount ; End bullet
+                  player(p)\previousEnergy=player(p)\energy
+                  player(p)\energy=player(p)\energy-\bulletImpact
+                  player(p)\shot=#shotAnim
+                  ; CPU if been shot new target is the avatar who shot teh CPU
+                  If player(p)\joy=-1
+                    player(p)\targetPlayer=\srcAvatar
+                  End If
+                  ;End CPU
+                  If AddItem(sndevents())
+                    sndevents()\snd=3
+                    If \x >= 160
+                      sndevents()\side=1
+                    Else
+                      sndevents()\side=0
+                    Endif
+                  End If
+                  If (player(p)\energy <= 0)
+                    player(p)\dead=2
+                  EndIf
                 EndIf
               EndIf
             EndIf
@@ -1353,6 +1476,33 @@ End Statement
 
   Wend
 
+  ;Manage Bonus
+  If (timingUpdate)
+    bonusTimerBuffer=bonusTimerBuffer-1
+    If (bonusTimerBuffer=0)
+      if bonusCounter < 4:bonusCounter=bonusCounter+1:End If
+      bonusTimerBuffer=bonusTimer(bonusCounter)
+      bx.w=1+Rnd(#mapWidth-2)
+      by.w=1+Rnd(#mapHeight-2)
+      If (levels(currentLevel)\map[bx+by*#mapWidth]<2)
+        If AddItem(bonus())
+          bonus()\shapeIndex=Rnd(7)
+          bonus()\x=bx*16
+          bonus()\y=by*16
+        End If
+      Else
+        px.b=Rnd(2)
+        py.b=Rnd(2)
+        bx=1+px*(#mapWidth-3)
+        by=1+py*(#mapHeight-3)
+        If AddItem(bonus())
+          bonus()\shapeIndex=Rnd(7)
+          bonus()\x=bx*16
+          bonus()\y=by*16
+        End If
+      EndIf
+    End If
+  End If
 
   Use Bitmap 2
   ;HUD Update
@@ -1371,14 +1521,18 @@ End Statement
         Boxf 32+\avatar*64,15-\energy,48+\avatar*64,15,30 
     EndIf
   Next
+  ;If (timingUpdate=1)
+  ;   Boxf 256,0,286,6,0
+  ;   PrintText{str$(timing),256,0}
+  ;End If
   ;Debug
   If #Debug
-  Boxf 256,0,319,15,0
-    PrintText{str$(player(2)\targetPlayer),256,0}
-    PrintText{str$(player(2)\direction),280,0}
-    PrintText{str$(player(2)\bufDirection),280,6}
-    PrintText{str$(player(2)\targetY),300,0}
-    PrintText{str$(player(2)\targetX),300,6}
+    Boxf 256,0,319,15,0
+    PrintText{str$(player(0)\timerBonus),300,0}
+    ;PrintText{str$(player(2)\direction),280,0}
+    ;PrintText{str$(player(2)\bufDirection),280,6}
+    ;PrintText{str$(player(2)\targetY),300,0}
+    ;PrintText{str$(player(2)\targetX),300,6}
   End If
 
   ;Process sounds

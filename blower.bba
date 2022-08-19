@@ -5,16 +5,12 @@
 ; Author: Youen CHENE
 ;
 ; Palette :
-;  1-2 World (Ground - Non Blocking)
-;  3-4 World (Wall - Blocking)
-;  4-16 Player
-;  17-19 Bullets
+;  1-4 World (Ground - Non Blocking)
+;  5-8 World (Wall - Blocking)
+;  9-23 Player
+;  25-26 Bonus
 ;  20 Player
-;  21-23 Bullets
-;  24 Player
-;  25-27 Flam Thrower
-;  28 Player
-;  29-31 Flam Thrower
+;  27-31 Flam Thrower
 ;
 ; Shape :
 ;  0 Buffer shape for GetaSprite
@@ -30,6 +26,7 @@
 ;  100-140 Avatar 4
 ;  250-350 Font
 ;  320-362 Bullets
+;  370-382 FlamThrower
 ;****************************************
 
 ;NoCli
@@ -63,6 +60,7 @@ Amiga
 #ShapeIndexHUDPlayer=27
 #ShapeIndexBullet=320
 #ShapeIndexBonus=335
+#ShapeIndexFlam=370
 
 #wallColor1=5
 #wallColor2=8
@@ -74,8 +72,9 @@ Amiga
 #energyBulletImpact2=8
 energyBulletImpact=#energyBulletImpactNormal
 #shotAnim=6
-#timerBonusInit=200 ; 4sec
+#timerBonusInit=500 ; 5sec
 
+#bufferFlamethrower=4
 
 chosenWorld.b=-1
 chosenMode.b=0
@@ -122,6 +121,7 @@ NEWTYPE .player
   timerBonus.w
   invincible.b
   flameThrower.b
+  bufferFlame.b
 End NEWTYPE 
 
 NEWTYPE .Bullet
@@ -456,6 +456,23 @@ End Statement
   Next
   For i=3 to 4
     GetaShape #ShapeIndexBonus+5+i-3,16*i,288,16,16 
+  Next
+
+  ;Flame Thrower
+  For i=0 to 2
+    ;Left
+    GetaShape #ShapeIndexFlam+3+i,16*i,256,16,16
+    ;Right
+    CopyShape #ShapeIndexFlam+3+i,#ShapeIndexFlam+9+i
+    XFlip #ShapeIndexFlam+9+i
+    ;Up
+    CopyShape #ShapeIndexFlam+3+i,#ShapeIndexFlam+i
+    Rotate #ShapeIndexFlam+i,0.75
+    XFlip #ShapeIndexFlam+i
+    ;Down
+    CopyShape #ShapeIndexFlam+3+i,#ShapeIndexFlam+6+i
+    Rotate #ShapeIndexFlam+6+i,0.25
+    ;XFlip #ShapeIndexFlam+6+i
   Next
 
   Free BitMap 9
@@ -870,7 +887,7 @@ End Statement
     Dim List sndevents.SndEvent(8)
     
 
-    Dim List bonus.Bonus(8) ;concurrent bonus
+    Dim List bonus.Bonus(3) ;concurrent bonus
     bonusCounter.b=0 ;bonus number
     bonusTimerBuffer.l=bonusTimer(bonusCounter) ; current bonus timer buffer
 
@@ -1032,28 +1049,28 @@ End Statement
     UsePath player(i)
     If (\dead <> 1)
       a=0
-    If (\dead>0 OR \shot>0)
-      ;Has been shoted anim
-      If (\shot>0)
-        a=50+\avatar*50+\direction*10
-        \shot=\shot-1
-      Else
-        If (\dead=2)
-          a=50+\avatar*50+40
-          \dead=\dead-1
-          \x=\x-8
-          If (\x>272):\x=272:EndIf
-          If AddItem(sndevents())
-            sndevents()\snd=4
-            If \x >= 160
-              sndevents()\side=1
-            Else
-              sndevents()\side=0
-            Endif
-          End If
+      If (\dead>0 OR \shot>0)
+        ;Has been shoted anim
+        If (\shot>0)
+          a=50+\avatar*50+\direction*10
+          \shot=\shot-1
+        Else
+          If (\dead=2)
+            a=50+\avatar*50+40
+            \dead=\dead-1
+            \x=\x-8
+            If (\x>272):\x=272:EndIf
+            If AddItem(sndevents())
+              sndevents()\snd=4
+              If \x >= 160
+                sndevents()\side=1
+              Else
+                sndevents()\side=0
+              Endif
+            End If
+          EndIf
         EndIf
-      EndIf
-    Else
+      Else
 
       ; Manage End of bonus
       If (\timerBonus > 0)
@@ -1292,7 +1309,112 @@ End Statement
         ; Fire
         \frameCounter=0
         \animIndex=0
-        If (\waitBullet<=0)
+        If (\flameThrower=1)
+          
+          If (\bufferFlame<=0)
+            \bufferFlame=#bufferFlamethrower
+          Else 
+            \bufferFlame=\bufferFlame-1
+          End if
+          fx.w=0
+          fy.w=0
+          
+          Dim cols.b(nbPlayer-1)
+          Select \direction
+            Case 0
+            ;display
+              For f=0 to 2
+                fy.w=\y-16*(f+1)
+                If (fy>0 AND fy<208)
+                  BBlit db,#ShapeIndexFlam+f,\x,fy
+                End If
+              Next
+              ;collision
+              For p=0 to (nbPlayer-1)
+                If (i <> p)
+                  If (player(p)\invincible=0)
+                    If (player(p)\dead = 0) ; not dead
+                      ;Box xb-7,yb-7,xb-7+14,yb-7+14,8;debug
+                      If RectsHit(\x,\y-48,16,48,player(p)\x,player(p)\y,16,16)
+                      cols.b(p)=-1
+                      End IF
+                    End If
+                  End If
+                End If
+              Next
+            Case 1
+              For f=0 to 2
+                fx=\x+16*(f+1)
+                If (fx>0 AND fx<304)
+                  BBlit db,#ShapeIndexFlam+3+f,fx,\y
+                End if
+              Next
+              ;collision
+              For p=0 to (nbPlayer-1)
+                If (i <> p)
+                  If (player(p)\invincible=0)
+                    If (player(p)\dead = 0) ; not dead
+                      If RectsHit(\x+16,\y,48,16,player(p)\x,player(p)\y,16,16)
+                      cols.b(p)=-1
+                      End IF
+                    End If
+                  End If
+                End If
+              Next
+            Case 2
+              For f=0 to 2
+                fy.w=\y+16*(f+1)
+                If (fy>0 AND fy<208)
+                  BBlit db,#ShapeIndexFlam+6+f,\x,fy
+                End If
+              Next
+              ;collision
+              For p=0 to (nbPlayer-1)
+                If (i <> p)
+                  If (player(p)\invincible=0)
+                    If (player(p)\dead = 0) ; not dead
+                      If RectsHit(\x,\y+16,16,48,player(p)\x,player(p)\y,16,16)
+                      cols.b(p)=-1
+                      End IF
+                    End If
+                  End If
+                End If
+              Next
+            Case 3
+              For f=0 to 2
+                fx=\x-16*(f+1)
+                If (fx>0 AND fx<304)
+                  BBlit db,#ShapeIndexFlam+9+f,fx,\y
+                End If
+              Next
+              ;collision
+              For p=0 to (nbPlayer-1)
+                If (i <> p)
+                  If (player(p)\invincible=0)
+                    If (player(p)\dead = 0) ; not dead
+                    ;Box \x,\y,\x-48,16,10;debug
+                      If RectsHit(\x-48,\y,48,16,player(p)\x,player(p)\y,16,16)
+                        cols.b(p)=-1
+                      End IF
+                    End If
+                  End If
+                End If
+              Next
+          End Select
+          If (\bufferFlame=0)
+            For p=0 to (nbPlayer-1)
+              If (cols(p))
+                player(p)\previousEnergy=player(p)\energy
+                player(p)\energy=player(p)\energy-\bulletImpact
+                ;player(p)\shot=#shotAnim ;player can still move
+                If (player(p)\energy <= 0)
+                      player(p)\dead=2
+                EndIf
+              End If
+            Next
+          End If
+        Else
+          If (\waitBullet<=0)
             If (buttonOn)
               If (\bullets>0)
                 If AddItem(bullets())
@@ -1342,7 +1464,7 @@ End Statement
                 End If
               End If
             End If
-
+          End If
         End If
       End If
       a=\avatar*50+51+\direction*10+\animIndex

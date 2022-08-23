@@ -1,3 +1,4 @@
 *.bb2
 .DS_Store
 *.uaem
+*.bb2.bak

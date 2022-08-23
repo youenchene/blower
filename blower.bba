@@ -31,7 +31,10 @@
 
 ;NoCli
 WBStartup
+;CLOSE WB
 
+cfree1.l=ChipFree
+ffree1.l=FastFree
 
 DEFTYPE .b
 Amiga
@@ -48,8 +51,8 @@ Amiga
 #waitBullet=30
 #waitBulletCPU=90
 #speedBullet=3
-#stepSizeDefault=3
-#stepSizeBoost=5
+#stepSizeDefault=4
+#stepSizeBoost=6
 #maxEnergy=15
 #bufferDirection=8
 #bufferDirectionWall=120
@@ -88,6 +91,14 @@ chosenPlayer(0)=1
 chosenPlayer(1)=0
 chosenPlayer(2)=-1
 chosenPlayer(3)=-1
+
+
+Dim bonusTimer(5)
+bonusTimer(0)=15
+bonusTimer(1)=12
+bonusTimer(2)=10
+bonusTimer(3)=7
+bonusTimer(4)=5
 
 
 NEWTYPE .Level
@@ -148,21 +159,8 @@ NEWTYPE .Bonus
   y.w
 End NEWTYPE
 
-NEWTYPE .SndEvent
-  snd.b
-  side.b ; 0 for left 1 for right
-  vol.b
-End NEWTYPE
-
-Dim bonusTimer(5)
-bonusTimer(0)=30
-bonusTimer(1)=20
-bonusTimer(2)=15
-bonusTimer(3)=10
-bonusTimer(4)=5
-
-
 XINCLUDE MJoy.bb2
+XINCLUDE ptplayer_inc.bb2
 
 Statement PrintText{txt$,txtX.w,txtY.w}
   BLITZ
@@ -321,6 +319,12 @@ End Statement
   Locate 0,14
   loadTextY.w=14*8
   Colour 3,0
+.LoadMusic:
+  LoadBank 0,"assets/zik/SunsetRebels-Amiga.mod",2
+  addrMod.l=Bank(0)
+  MTInstall True
+  MTInit 0,0
+  MTPlay On
 
   Bitmap 0,320,224,5; db0
   Bitmap 1,320,224,5; db1
@@ -330,6 +334,8 @@ End Statement
   Bitmap 6, 64, 81, 5 ;HUD
 
 
+
+.LoadFont:
   Bitmap 8, 244, 15, 2 ;Font
   LoadBitMap 8, "assets/font01.iff"
 
@@ -338,6 +344,13 @@ End Statement
   next
   Free Bitmap 8
 
+  Use Bitmap 7
+  Delay_ 50
+  Blitz
+  PrintText{"Loading Music : Sunset Rebels by Roald Strauss",10,94}
+  QAMIGA
+
+.LoadTiles:
   Use Bitmap 7
   Delay_ 50
   Blitz
@@ -385,6 +398,7 @@ End Statement
   GetaShape 34,16,16,16,16
   Free Bitmap 4
 
+.LoadBobs:
   Use Bitmap 7
   Delay_ 50
   Blitz
@@ -480,6 +494,8 @@ End Statement
   Dim levels.Level(#levelsCount)
   GoSub LoadLevels
 
+
+.LoadHUD:
   ; HUD
   Use Bitmap 7
   Delay_ 50
@@ -519,15 +535,18 @@ End Statement
   PalRGB 2,0,0,0,0  ;Reset T0 color to black
 
 
-  ; SoundEffects
+.LoadSoundEffects:
   Use Bitmap 7
   Delay_ 50
   Blitz
   PrintText{"Loading Sound Effects...",10,130}
   QAMIGA
 
+
   LoadSound 0,"assets/snd/gun1amp.iff"
+  DEFTYPE .sfx gun2ampB
   LoadSound 1,"assets/snd/gun2amp.iff"
+  SFXInit{&gun2ampB,1,64,-1,10}
   LoadSound 2,"assets/snd/shotwall.iff"
   LoadSound 3,"assets/snd/shot.iff"
   LoadSound 4,"assets/snd/dead.iff"
@@ -536,9 +555,13 @@ End Statement
   LoadSound 7,"assets/snd/step-grass.iff"
   LoadSound 8,"assets/snd/step-road.iff"
 
+.LoadTitleScreen:
   Use Bitmap 7
+  Delay_ 50
   Blitz
   PrintText{"Loading Title Screen...",10,136}
+
+ 
   QAMIGA
 
   Bitmap 8, 320, 128, 5
@@ -566,12 +589,29 @@ End Statement
   Buffer 0,16384
   Buffer 1,16384
 
+  VWAIT 50
+  BLITZ
+  cfree2.l=ChipFree
+  ffree2.l=FastFree
+  cfree.l=(cfree1-cfree2)/1024
+  ffree.l=(ffree1-ffree2)/1024
+  ;STOP
+  Use Bitmap 7
+  PrintText{"Memory footprint Chip:"+str$(cfree)+" Fast:"+str$(ffree),10,142}
+  PrintText{"Remaining Chip:"+str$(cfree2),10,148}
+  If #Debug 
+    MouseWait
+  End If
+  
+
   Use Bitmap 7
   for i.b = 0 to 50
     Fadepalette 3, 4,1-i / 50
     DisplayPalette 0, 4
     vwait
   next
+
+  QAMIGA
 
 .TitleScreen:
   flagsTS.l = $05
@@ -693,6 +733,7 @@ End Statement
                 DisplayPalette 1, 0
                 VWAIT
               Next
+              MTOff
               Goto Game
               actionBuffer=#actionBuf
             Else
@@ -744,7 +785,7 @@ End Statement
             actionBuffer=#actionBuf
         End Select
       End If
-      If soundM=1:Sound 1,%1100,64:End If
+      If soundM=1:MTPlayFX &gun2ampB:End If
     End If
     ;Update Display
     paddingX.w=0
@@ -768,11 +809,15 @@ End Statement
     DisplayPalette 1, 0
     VWAIT
   Next
+  MTEnd
+  MTRemove
   VWAIT 50
   AMIGA
   End
 
 .Game:
+
+
 
   QAMIGA
   ;Init CopList
@@ -884,7 +929,7 @@ End Statement
 
     Dim List bullets.Bullet(8)
 
-    Dim List sndevents.SndEvent(8)
+    Dim List sndevents.sfx(8)
     
 
     Dim List bonus.Bonus(3) ;concurrent bonus
@@ -896,10 +941,15 @@ End Statement
 
     DisplayPalette 1,1
     db.b=0 ;double buffering
+    MTPlay Off
+    MTEnd
+
     Repeat
       Gosub GameLoop
     Until (RawStatus($45) OR remainingPlayers<2) ; Escape pressed
-
+    songPos.b=Rnd(13)
+    MTInit 0,songPos
+    MTPlay On
     ;Who won?
     If (remainingPlayers<2)
       Gosub ScoreEndLevel
@@ -1061,11 +1111,10 @@ End Statement
             \x=\x-8
             If (\x>272):\x=272:EndIf
             If AddItem(sndevents())
-              sndevents()\snd=4
               If \x >= 160
-                sndevents()\side=1
+                SFXInit{&sndevents(),4,64,1,11}
               Else
-                sndevents()\side=0
+                SFXInit{&sndevents(),4,64,0,11}
               Endif
             End If
           EndIf
@@ -1292,13 +1341,11 @@ End Statement
             If (\animIndex = 3)
               \animIndex=0
                 If AddItem(sndevents())
-                  sndevents()\snd=5+currentWorld
-                  sndevents()\vol=32
                   If \x >= 160
-                    sndevents()\side=1
+                    SFXInit{&sndevents(),5+currentWorld,32,1,5}
                   Else
-                    sndevents()\side=0
-                  End If
+                    SFXInit{&sndevents(),5+currentWorld,32,0,5}
+                  Endif
                 End If
             Else
               \animIndex=\animIndex+1
@@ -1450,16 +1497,15 @@ End Statement
                   End If
                   \bullets=\bullets-1
                   If AddItem(sndevents())
+                    sndIndex.b=0
                     If (\bulletImpact>6)
-                      sndevents()\snd=1
-                    Else
-                      sndevents()\snd=0
+                      sndIndex=1
                     End If
                     If \x >= 160
-                      sndevents()\side=1
+                      SFXInit{&sndevents(),sndIndex,64,1,10}
                     Else
-                      sndevents()\side=0
-                    End If
+                      SFXInit{&sndevents(),sndIndex,64,0,10}
+                    Endif
                   End If
                 End If
               End If
@@ -1524,13 +1570,12 @@ End Statement
         If ((dot>=#wallColor1 AND dot<=#wallColor2) OR bound.b=-1)
          bullets()\endLife=#endAnimCount
          If AddItem(sndevents())
-            sndevents()\snd=2
             If \x >= 160
-              sndevents()\side=1
+              SFXInit{&sndevents(),2,64,1,7}
             Else
-              sndevents()\side=0
+              SFXInit{&sndevents(),2,64,0,7}
             Endif
-          End If
+         End If
         EndIf
       EndIf
     EndIf
@@ -1572,11 +1617,10 @@ End Statement
                   End If
                   ;End CPU
                   If AddItem(sndevents())
-                    sndevents()\snd=3
                     If \x >= 160
-                      sndevents()\side=1
+                      SFXInit{&sndevents(),3,64,1,8}
                     Else
-                      sndevents()\side=0
+                      SFXInit{&sndevents(),3,64,0,8}
                     Endif
                   End If
                   If (player(p)\energy <= 0)
@@ -1662,15 +1706,7 @@ End Statement
   ResetList sndevents()
   prio.b=0
   While NextItem(sndevents())
-    If (prio=0)
-      If (\side=1)
-        side.b=%0100
-      Else
-        side.b=%1000
-      End If
-      if (\vol=0): vol.b=64:Else: vol.b=\vol :End If
-      Sound \snd,side,vol
-    End If
+    MTPlayFX &sndevents()
     KillItem sndevents() 
   Wend
   Return

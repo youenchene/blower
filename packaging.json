@@ -1,0 +1,19 @@
+{
+    "supports": [
+        {
+            "type": "adf",
+            "boot": true,
+            "supportName": "Blower",
+            "exeToLaunch": "blower.exe",
+            "includeDiskFontLibrary": true,
+            "includeMathTransLibrary": false,
+            "filesToIncludeOnRoot": [
+                "blower.exe",
+                "blower.exe.info"
+            ],
+            "foldersToInclude": [
+                "assets"
+            ]
+        }
+    ]
+}

@@ -36,7 +36,7 @@ CloseWorkBench_
 cfree1.l=ChipFree
 ffree1.l=FastFree
 
-DEFTYPE .b
+DEFTYPE .w
 Amiga
 #Debug=0
 #skipIntro=0 ;1 to skip intro
@@ -73,7 +73,7 @@ Amiga
 #energyBulletImpactNormal=1
 #energyBulletImpact1=15
 #energyBulletImpact2=8
-energyBulletImpact=#energyBulletImpactNormal
+energyBulletImpact.b=#energyBulletImpactNormal
 #shotAnim=6
 #timerBonusInit=500 ; 5sec
 
@@ -84,6 +84,7 @@ chosenMode.b=0
 
 currentWorld.b=2
 currentLevel.b=0
+nbPlayer.b=4
 
 Dim chosenPlayer.b(4)
 
@@ -195,7 +196,7 @@ Statement PrintText{txt$,txtX.w,txtY.w}
   Next i
 End Statement
 
-Statement PaletteWorld{n}
+Statement PaletteWorld{n.b}
   Select n
     Case 0
       PalRGB 1,1,15,15,0
@@ -465,15 +466,15 @@ End Statement
   XFlip #ShapeIndexBullet+12
 
   ;Bonus
-  For i=0 to 4
+  For i.b=0 to 4
     GetaShape #ShapeIndexBonus+i,16*i,272,16,16 
   Next
-  For i=3 to 4
+  For i.b=3 to 4
     GetaShape #ShapeIndexBonus+5+i-3,16*i,288,16,16 
   Next
 
   ;Flame Thrower
-  For i=0 to 2
+  For i.b=0 to 2
     ;Left
     GetaShape #ShapeIndexFlam+3+i,16*i,256,16,16
     ;Right
@@ -683,10 +684,10 @@ End Statement
   cursorB.b=0
   soundM.b=0
   mi.b=0
-  actionBuffer=0
+  actionBuffer.b=0
   #actionBuf=6
-  titleBuffer=4
-  titleNeon=1
+  titleBuffer.b=4
+  titleNeon.b=1
   Repeat
     VWAIT
     UnBuffer 0
@@ -830,7 +831,7 @@ End Statement
   Blitz
   ;Init data
   ;Init player
-  nbPlayer.b=4
+  nbPlayer=4
   Dim player.player(nbPlayer)
 
 

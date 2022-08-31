@@ -29,9 +29,9 @@
 ;  370-382 FlamThrower
 ;****************************************
 
-;NoCli
+NoCli
 WBStartup
-;CLOSE WB
+CloseWorkBench_
 
 cfree1.l=ChipFree
 ffree1.l=FastFree
@@ -39,7 +39,7 @@ ffree1.l=FastFree
 DEFTYPE .b
 Amiga
 #Debug=0
-#skipIntro=1 ;1 to skip intro
+#skipIntro=0 ;1 to skip intro
 
 #mapWidth=20
 #mapHeight=14
@@ -240,7 +240,7 @@ End Statement
 .Intro:
   QAMIGA
   ; Intro @ Loading - Micrix Production
-  flags3.l = $02
+  flags3.l = $00002 + $00000
   InitCopList 0,44,256,flags3,8,4,0
 
   VWAIT 50
@@ -326,7 +326,7 @@ End Statement
   MTInit 0,0
   MTPlay On
 
-  Bitmap 0,320,224,5; db0
+  Bitmap 0,320,224,5; db0 
   Bitmap 1,320,224,5; db1
   Bitmap 2,320,16,5 ;hud 
   ;src
@@ -614,8 +614,8 @@ End Statement
   QAMIGA
 
 .TitleScreen:
-  flagsTS.l = $05
-  flagsTS2.l = $05
+  flagsTS.l = $00005 + $00000
+  flagsTS2.l = $00005 + $00000
   InitCopList 0,44,128,flagsTS,0,32,0
   InitCopList 1,174,120,flagsTS2,0,32,0
   LoadPalette 3, "assets/title.iff" 
@@ -821,8 +821,8 @@ End Statement
 
   QAMIGA
   ;Init CopList
-  flags0.l = $05
-  flags1.l = $05
+  flags0.l = $00005 + $00000
+  flags1.l = $00005 + $00000
   InitCopList 0,44,16,flags0,8,32,0
   InitCopList 1,62,224,flags1,8,32,0
 

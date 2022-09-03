@@ -1885,9 +1885,6 @@ End Statement
             vJoyx.b=-1
         End Select
     End if
-    If RawStatus($44)
-      STOP
-    End If 
   End If
   Return
 

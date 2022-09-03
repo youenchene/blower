@@ -49,15 +49,15 @@ Amiga
 #endAnimCount=8
 #bulletPerPlayer=2
 #waitBullet=30
-#waitBulletCPU=90
+
 #speedBullet=3
 #stepSizeDefault=4
 #stepSizeBoost=6
 #maxEnergy=15
 #bufferDirection=8
 #bufferDirectionWall=120
-#distanceCPU=8
-#distanceCPUShot=16
+
+
 
 #ShapeIndexHUDAvatar=36
 #ShapeIndexHUDPlayer=27
@@ -78,6 +78,16 @@ energyBulletImpact.b=#energyBulletImpactNormal
 #timerBonusInit=500 ; 5sec
 
 #bufferFlamethrower=4
+
+;CPU Behaviour
+#waitBulletCPU=35
+#CPUBufferStateInit=70
+#CPUBufferMoveTypeAvoidInit=70
+#CPUBufferMoveTypeInit=120
+#distanceCPUShot=16
+#distanceCPU=9
+#tooFarCPU=72
+
 
 chosenWorld.b=-1
 chosenMode.b=0
@@ -133,7 +143,11 @@ NEWTYPE .player
   timerBonus.w
   invincible.b
   flameThrower.b
-  bufferFlame.b
+  bufferFlame.b  
+  CPUState.b ;0 move and shoot 1 move 
+  CPUMoveType.b  ;0 get closer 1  avoid
+  CPUBufferState.w 
+  CPUBufferMoveType.w 
 End NEWTYPE 
 
 NEWTYPE .Bullet
@@ -981,6 +995,10 @@ End Statement
   \invincible=0
   \flameThrower=0
   \timerBonus=0
+  \CPUBufferState=#CPUBufferStateInit
+  \CPUState=0 ;Start with move and shoot
+  \CPUMoveType=0 ;Start with move and get closer
+  \CPUBufferMoveType=#CPUBufferMoveTypeInit
   Return
 
 .BuildWorld:
@@ -1132,6 +1150,7 @@ End Statement
       End If
 
       currentJoy.b=\joy
+      buttonOn.b=0
 
       If (currentJoy >= 0  AND currentJoy < 4)
         ;Get Joy Button
@@ -1140,37 +1159,47 @@ End Statement
         If (\waitBullet>0)
           \waitBullet=\waitBullet-1
         EndIf
-      Else ;CPU Shoot
+      Else ;CPU alternatemove to Shoot and shoot
+        If \CPUBufferState>0
+          \CPUBufferState=\CPUBufferState-1
+        Else
+          \CPUState=1-\CPUState  
+          If \CPUState=0 ; if move and shoot (0) switch after shoot
+            \CPUBufferState=#CPUBufferStateInit 
+          End If
+        End If
         If (\waitBullet>0)
           \waitBullet=\waitBullet-1
         Else
-          If (\bullets>0)
-            Select \direction
-              Case 0
-                If (Abs(\deltaX)<#distanceCPUShot)
-                  If (\deltaY>0)
-                    buttonOn=1
+          If \CPUState=0
+            If (\bullets>0)
+              Select \direction
+                Case 0
+                  If (Abs(\deltaX)<#distanceCPUShot)
+                    If (\deltaY>0)
+                      buttonOn=1
+                    End If
                   End If
-                End If
-              Case 1
-                If (Abs(\deltaY)<#distanceCPUShot)
-                  If (\deltaX<0)
-                    buttonOn=1
+                Case 1
+                  If (Abs(\deltaY)<#distanceCPUShot)
+                    If (\deltaX<0)
+                      buttonOn=1
+                    End If
                   End If
-                End If
-              Case 2
-                If (Abs(\deltaX)<#distanceCPUShot)
-                  If (\deltaY<0)
-                    buttonOn=1
+                Case 2
+                  If (Abs(\deltaX)<#distanceCPUShot)
+                    If (\deltaY<0)
+                      buttonOn=1
+                    End If
                   End If
-                End If
-              Case 3
-                If (Abs(\deltaY)<#distanceCPUShot)
-                  If (\deltaX>0)
-                    buttonOn=1
+                Case 3
+                  If (Abs(\deltaY)<#distanceCPUShot)
+                    If (\deltaX>0)
+                      buttonOn=1
+                    End If
                   End If
-                End If
-            End Select
+              End Select
+            End If
           End If
        End If
       End If
@@ -1490,6 +1519,9 @@ End Statement
                   bullets()\bulletImpact=\bulletImpact
                   if (currentJoy=-1)
                     \waitBullet=#waitBulletCPU
+                    ; if shoot then move
+                    \CPUState=1
+                    \CPUBufferState=#CPUBufferStateInit  
                   Else
                     \waitBullet=#waitBullet
                   End If
@@ -1685,19 +1717,6 @@ End Statement
         Boxf 32+\avatar*64,15-\energy,48+\avatar*64,15,30 
     EndIf
   Next
-  ;If (timingUpdate=1)
-  ;   Boxf 256,0,286,6,0
-  ;   PrintText{str$(timing),256,0}
-  ;End If
-  ;Debug
-  If #Debug
-    Boxf 256,0,319,15,0
-    PrintText{str$(player(0)\timerBonus),300,0}
-    ;PrintText{str$(player(2)\direction),280,0}
-    ;PrintText{str$(player(2)\bufDirection),280,6}
-    ;PrintText{str$(player(2)\targetY),300,0}
-    ;PrintText{str$(player(2)\targetX),300,6}
-  End If
 
   ;Process sounds
   USEPATH sndevents()
@@ -1709,8 +1728,7 @@ End Statement
   Wend
   Return
 
-
-.CPUMove
+.CPUMove:
   UsePath player(i)
   \deltaX=0
   \deltaY=0
@@ -1745,8 +1763,6 @@ End Statement
     \deltaY=\y-\targetY
 
     If (\bufDirection=0)
-
-
       dirX.b=0
       dirY.b=0
       If (\deltaX>0):dirX=-1:Else:dirX=1:End If
@@ -1755,17 +1771,26 @@ End Statement
       ;Buffer =0 change direction
       changeDirection.b=0
 
-      If (\direction=1 OR \direction=3)
-        If (Abs(\deltaY)>Abs(\deltaX) AND Abs(\deltaY)>#distanceCPU)
-          changeDirection=-1
+      If \CPUMoveType=0
+        If (\direction=1 OR \direction=3)
+          If (Abs(\deltaY)>Abs(\deltaX) AND Abs(\deltaY)>#distanceCPU)
+            changeDirection=-1
+          End If
+        End If
+        If (\direction=0 OR \direction=2)
+          If (Abs(\deltaX)>Abs(\deltaY) AND Abs(\deltaX)>#distanceCPU)
+            changeDirection=-1
+          End If
+        End If
+      Else
+        If (\direction=1 OR \direction=3)
+            changeDirection=-1
+        End If
+        If (\direction=0 OR \direction=2)
+            changeDirection=-1
         End If
       End If
-      If (\direction=0 OR \direction=2)
-        If (Abs(\deltaX)>Abs(\deltaY) AND Abs(\deltaX)>#distanceCPU)
-          changeDirection=-1
-        End If
-      End If
-
+    
       If (changeDirection)
         If (\direction=1 OR \direction=3)
           If (dirY=1)
@@ -1806,23 +1831,68 @@ End Statement
       ;STOP
       \bufDirection=#bufferDirection
     End If
-    If ((Abs(\deltaY)>#distanceCPU) OR (Abs(\deltaY)>#distanceCPU))
-      Select \direction
-        Case 0
-          vJoyy.b=-1
-        Case 1
-          vJoyx.b=1
-        Case 2
-          vJoyy.b=1
-        Case 3
-          vJoyx.b=-1
-      End Select
+    allowMove.b=0
+    If \CPUMoveType=0
+      If ((Abs(\deltaY)>#distanceCPU) OR (Abs(\deltaY)>#distanceCPU))
+        allowMove=-1
+      End If
     End If
+    If (allowMove=0)
+      ;evaluate si change mode to avoid
+      If Abs(\deltaX)>#tooFarCPU OR Abs(\deltaY)>#tooFarCPU ; if too far go closer
+        \CPUMoveType=0
+        ;\CPUBufferMoveType=#CPUBufferMoveTypeInit
+        allowMove=-1
+      Else ;Alternate avoid and get closer strategy
+        If \CPUBufferMoveType>0
+          \CPUBufferMoveType=\CPUBufferMoveType-1
+        Else
+          \CPUMoveType=1-\CPUMoveType
+          If \CPUMoveType=0
+            \CPUBufferMoveType=#CPUBufferMoveTypeInit
+          Else
+            \CPUBufferMoveType=#CPUBufferMoveTypeAvoidInit
+          End If
+        End If
+      End If
+    End If
+    If \CPUMoveType=1
+      allowMove=-1
+      ;invertDirection
+      If (\bufDirection=#bufferDirection)
+        Select \direction
+          Case 0
+            \direction=2
+          Case 1
+            \direction=3
+          Case 2
+            \direction=0
+          Case 3
+            \direction=1
+        End Select
+      End If
+    End If
+    If allowMove
+      ;move order
+      Select \direction
+          Case 0
+            vJoyy.b=-1
+          Case 1
+            vJoyx.b=1
+          Case 2
+            vJoyy.b=1
+          Case 3
+            vJoyx.b=-1
+        End Select
+    End if
+    If RawStatus($44)
+      STOP
+    End If 
   End If
   Return
 
 
-.ScoreEndLevel
+.ScoreEndLevel:
   winner.b=-1
   Use Bitmap 1-db
   Cls 0
@@ -1894,7 +1964,7 @@ End Statement
   Until (RawStatus($45) OR (MJoyb{1} AND bufferTxt<26)) ; Escape pressed or button opressed
   Return
 
-.ScoreEnd
+.ScoreEnd:
   NEWTYPE .playerIndex
     score.w
     pindex.b

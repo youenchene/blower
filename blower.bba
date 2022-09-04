@@ -254,7 +254,7 @@ End Statement
 #Random2ArraySize=25
 Random2Ind.b=0
 Dim Random2Array.b(#Random2ArraySize)
-For r.w=0 to #Random2ArraySize-1
+For r.b=0 to (#Random2ArraySize-1)
    Random2Array(r)=Rnd(2) 
 Next
 
@@ -269,7 +269,7 @@ End Statement
 #Random3ArraySize=25
 Random3Ind.b=0
 Dim Random3Array.b(#Random3ArraySize)
-For r.w=0 to #Random3ArraySize-1
+For r.b=0 to (#Random3ArraySize-1)
    Random3Array(r)=Rnd(3) 
 Next
 
@@ -284,7 +284,7 @@ End Statement
 #Random7ArraySize=25
 Random7Ind.b=0
 Dim Random7Array.b(#Random7ArraySize)
-For r.w=0 to #Random7ArraySize-1
+For r.b=0 to (#Random7ArraySize-1)
    Random7Array(r)=Rnd(7) 
 Next
 
@@ -1089,10 +1089,14 @@ End Statement
   Next
   Return
 
+
+
 .GameLoop:
   BLITZ
   VWait
   DisplayBitMap 1,db
+  MOVE.w #$000,$dff180 ; white
+  
   timerBuffer=timerBuffer+1
   timingUpdate.b=0
   If (timerBuffer=50)
@@ -1118,7 +1122,11 @@ End Statement
     EndIf
   Next 
 
+  MOVE.w #$333,$dff180 ; grey
+
   UnBuffer db
+
+  MOVE.w #$999,$dff180 ; light grey
 
   ;Display Bonus
   USEPATH bonus()
@@ -1163,6 +1171,17 @@ End Statement
 
 
   For i.b=0 to (nbPlayer-1)
+    Select i
+      Case 0
+        MOVE.w #$f00,$dff180 ; red
+      Case 1
+        MOVE.w #$0f0,$dff180 ; green
+      Case 2
+        MOVE.w #$00f,$dff180 ; blue
+      Case 3
+       MOVE.w #$0ff,$dff180 ; cyan 
+    End Select
+       
     UsePath player(i)
     If (\dead <> 1)
       a=0
@@ -1613,6 +1632,7 @@ End Statement
     End If
   next
 
+  MOVE.w #$f00,$dff180 ; red
 
   ;Update and Draw Sprites
   USEPATH bullets()
@@ -1725,6 +1745,8 @@ End Statement
 
   Wend
 
+  MOVE.w #$0f0,$dff180 ; green
+
   ;Manage Bonus
   If (timingUpdate)
     bonusTimerBuffer=bonusTimerBuffer-1
@@ -1757,23 +1779,32 @@ End Statement
     End If
   End If
 
-  Use Bitmap 2
+  MOVE.w #$00f,$dff180 ; blue
+
+  switchB2.b=0
   ;HUD Update
   For p.b=0 to (nbPlayer-1)
     UsePath player(p)
     If (\energy <> \previousEnergy)
-        ahud.b=0
-        If (\energy < 10)
-          ahud=1
-        EndIf
-        If (\energy < 4)
-          ahud=2
-        EndIf
-        Block #ShapeIndexHUDAvatar+ahud*4+\avatar,16+\avatar*64,0
-        Boxf 32+\avatar*64,0,48+\avatar*64,15-\energy,0
-        Boxf 32+\avatar*64,15-\energy,48+\avatar*64,15,30 
+      If (switchB2=0)
+          Use Bitmap 2
+          switchB2=-1
+      End If
+      ahud.b=0
+      If (\energy < 10)
+        ahud=1
+      EndIf
+      If (\energy < 4)
+        ahud=2
+      EndIf
+      \previousEnergy=\energy
+      Block #ShapeIndexHUDAvatar+ahud*4+\avatar,16+\avatar*64,0
+      Boxf 32+\avatar*64,0,48+\avatar*64,15-\energy,0
+      Boxf 32+\avatar*64,15-\energy,48+\avatar*64,15,30 
     EndIf
   Next
+
+  MOVE.w #$ff0,$dff180 ; yellow
 
   ;Process sounds
   USEPATH sndevents()
@@ -1783,7 +1814,10 @@ End Statement
     MTPlayFX &sndevents()
     KillItem sndevents() 
   Wend
+  MOVE.w #$f0f,$dff180 ; purple
   Return
+
+
 
 .CPUMove:
   UsePath player(i)

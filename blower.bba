@@ -251,6 +251,56 @@ Statement PaletteWorld{n.b}
     End Select 
 End Statement
 
+#Random2ArraySize=25
+Random2Ind.b=0
+Dim Random2Array.b(#Random2ArraySize)
+For r.w=0 to #Random2ArraySize-1
+   Random2Array(r)=Rnd(2) 
+Next
+
+Statement UpdateIndexRandom2Array{}
+  SHARED Random2Ind
+  Random2Ind+1
+  If Random2Ind>=#Random2ArraySize
+    Random2Ind=0
+  End If
+End Statement
+
+#Random3ArraySize=25
+Random3Ind.b=0
+Dim Random3Array.b(#Random3ArraySize)
+For r.w=0 to #Random3ArraySize-1
+   Random3Array(r)=Rnd(3) 
+Next
+
+Statement UpdateIndexRandom3Array{}
+  SHARED Random3Ind
+  Random3Ind+1
+  If Random3Ind>=#Random3ArraySize
+    Random3Ind=0
+  End If
+End Statement
+
+#Random7ArraySize=25
+Random7Ind.b=0
+Dim Random7Array.b(#Random7ArraySize)
+For r.w=0 to #Random7ArraySize-1
+   Random7Array(r)=Rnd(7) 
+Next
+
+Statement UpdateIndexRandom7Array{}
+  SHARED Random7Ind
+  Random7Ind+1
+  If Random7Ind>=#Random7ArraySize
+    Random7Ind=0
+  End If
+End Statement
+
+
+;Usage
+;a.b=Random2Array(Random2Ind)
+;UpdateIndexRandom2Array{}
+
 
 .Intro:
   QAMIGA
@@ -1079,7 +1129,8 @@ End Statement
       If ((\x+8) LSR 4) = ((player(p)\x+8) LSR 4)
         If ((\y+8) LSR 4) = ((player(p)\y+8) LSR 4)
           If \shapeIndex=2
-            \shapeIndex=Rnd(7)
+            \shapeIndex=Random7Array(Random7Ind)
+            UpdateIndexRandom7Array{}
             If \shapeIndex>1
               \shapeIndex=\shapeIndex+1
             End If
@@ -1297,7 +1348,8 @@ End Statement
                   \direction=d1
                 End If
                 If (nbDir=2)
-                  c.b=Rnd(2)
+                  c.b=Random2Array(Random2Ind)
+                  UpdateIndexRandom2Array{}
                   If (c=1)
                     \direction=d2
                   Else 
@@ -1306,7 +1358,8 @@ End Statement
                 End If
 
                 If (nbDir=3)
-                  c.b=Rnd(3)
+                  c.b=Random3Array(Random3Ind)
+                  UpdateIndexRandom3Array{}
                   Select c
                     Case 1
                       \direction=d2
@@ -1682,17 +1735,21 @@ End Statement
       by.w=1+Rnd(#mapHeight-2)
       If (levels(currentLevel)\map[bx+by*#mapWidth]<2)
         If AddItem(bonus())
-          bonus()\shapeIndex=Rnd(7)
+          bonus()\shapeIndex=Random7Array(Random7Ind)
+          UpdateIndexRandom7Array{}
           bonus()\x=bx*16
           bonus()\y=by*16
         End If
       Else
-        px.b=Rnd(2)
-        py.b=Rnd(2)
+        px.b=Random2Array(Random2Ind)
+        UpdateIndexRandom2Array{}
+        py.b=Random2Array(Random2Ind)
+        UpdateIndexRandom2Array{}
         bx=1+px*(#mapWidth-3)
         by=1+py*(#mapHeight-3)
         If AddItem(bonus())
-          bonus()\shapeIndex=Rnd(7)
+          bonus()\shapeIndex=Random7Array(Random7Ind)
+          UpdateIndexRandom7Array{}
           bonus()\x=bx*16
           bonus()\y=by*16
         End If
@@ -1737,7 +1794,8 @@ End Statement
       For p.b=0 to (nbPlayer-1)
         If (p<>i AND \targetPlayer = -1)
             If (player(i)\dead = 0)
-              target.b=Rnd(2)
+              target.b=Random2Array(Random2Ind)
+              UpdateIndexRandom2Array{}
               If (target=1) 
                   \targetPlayer=p
               End If

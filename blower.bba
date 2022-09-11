@@ -1320,7 +1320,6 @@ BlITZ
               vJoyx=\previousVJoyx
               vJoyy=\previousVJoyy
             End If
-            cursorCPU=cursorCPU+1
           End If
           If (vJoyx <> 0 OR vJoyy <> 0)
             \frameCounter=\frameCounter+1
@@ -1353,83 +1352,85 @@ BlITZ
 
               ; CPU behavior on wall it
               If currentJoy<0
-                If (paValid=0 AND pbValid=0)
-                  nbDir.b=0
-                  d1.b=-1
-                  d2.b=-1
-                  d3.b=-1
-                  For d.b=0 to (nbPlayer-1)
-                    If (d<>\direction)
-                      pw.b=-2
-                      Select d
-                        Case 0
-                          pw=Point(next_x+8,next_y-12)
-                        Case 1
-                          pw=Point(next_x+24,next_y+12)
-                        Case 2
-                          pw=Point(next_x+8,next_y+28)
-                        Case 3
-                          pw=Point(next_x-8,next_y+12)
-                      End Select
-                      cdir=(pw < #wallColor1 OR pw > #wallColor2)
-                      If cdir
-                        nbDir=nbDir+1
-                        If (d1 = -1)
-                          d1=d
-                        Else 
-                          If (d2 = -1)
-                            d2=d
+                If (currentCPU=cursorCPU)  ; only one CPu by frame on behavior
+                  If (paValid=0 AND pbValid=0)
+                    nbDir.b=0
+                    d1.b=-1
+                    d2.b=-1
+                    d3.b=-1
+                    For d.b=0 to (nbPlayer-1)
+                      If (d<>\direction)
+                        pw.b=-2
+                        Select d
+                          Case 0
+                            pw=Point(next_x+8,next_y-12)
+                          Case 1
+                            pw=Point(next_x+24,next_y+12)
+                          Case 2
+                            pw=Point(next_x+8,next_y+28)
+                          Case 3
+                            pw=Point(next_x-8,next_y+12)
+                        End Select
+                        cdir=(pw < #wallColor1 OR pw > #wallColor2)
+                        If cdir
+                          nbDir=nbDir+1
+                          If (d1 = -1)
+                            d1=d
                           Else 
-                            d3=d
+                            If (d2 = -1)
+                              d2=d
+                            Else 
+                              d3=d
+                            End If
                           End If
                         End If
                       End If
-                    End If
-                  next
-                  If (nbDir=1)
-                    \direction=d1
-                  End If
-                  If (nbDir=2)
-                    c.b=Rnd(2);Random2Array(Random2Ind)
-                    ;UpdateIndexRandom2Array{nbDir}
-                    If (c=1)
-                      \direction=d2
-                    Else 
+                    next
+                    If (nbDir=1)
                       \direction=d1
                     End If
-                  End If
-
-                  If (nbDir=3)
-                    c.b=Rnd(3);Random3Array(Random3Ind)
-                    ;UpdateIndexRandom3Array{c}
-                    Select c
-                      Case 1
+                    If (nbDir=2)
+                      c.b=Rnd(2);Random2Array(Random2Ind)
+                      ;UpdateIndexRandom2Array{nbDir}
+                      If (c=1)
                         \direction=d2
-                      Case 2 
+                      Else 
                         \direction=d1
-                      Default
-                        \direction=d3
-                    End Select
-                  End If
-                  
+                      End If
+                    End If
 
-                  ;If (\direction=1 OR \direction=3)
-                  ;  If (\deltaY>0)
-                  ;    \direction=\direction-1
-                  ;  Else
-                  ;    \direction=\direction+1
-                  ;  End If
-                  ;End If 
-                  ; If (\direction=0 OR \direction=2)
-                  ;  If (\deltaX>0)
-                  ;    \direction=\direction-1
-                  ;  Else
-                  ;    \direction=\direction+1
-                  ;  End If
-                  ;End If 
-                  ;if (\direction > 3):\direction=0:End If
-                  ;if (\direction < 0):\direction=3:End If
-                  \bufDirection=#bufferDirectionWall
+                    If (nbDir=3)
+                      c.b=Rnd(3);Random3Array(Random3Ind)
+                      ;UpdateIndexRandom3Array{c}
+                      Select c
+                        Case 1
+                          \direction=d2
+                        Case 2 
+                          \direction=d1
+                        Default
+                          \direction=d3
+                      End Select
+                    End If
+                    
+
+                    ;If (\direction=1 OR \direction=3)
+                    ;  If (\deltaY>0)
+                    ;    \direction=\direction-1
+                    ;  Else
+                    ;    \direction=\direction+1
+                    ;  End If
+                    ;End If 
+                    ; If (\direction=0 OR \direction=2)
+                    ;  If (\deltaX>0)
+                    ;    \direction=\direction-1
+                    ;  Else
+                    ;    \direction=\direction+1
+                    ;  End If
+                    ;End If 
+                    ;if (\direction > 3):\direction=0:End If
+                    ;if (\direction < 0):\direction=3:End If
+                    \bufDirection=#bufferDirectionWall
+                  End If
                 End If
               End If
 
@@ -1656,6 +1657,9 @@ BlITZ
         If (db=0)
           BBlit db,a,\x,\y  ;blinking if invincible
         End If
+      End If
+      If \joy<0
+        cursorCPU=cursorCPU+1
       End If
     End If
   next

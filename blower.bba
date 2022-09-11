@@ -89,6 +89,30 @@ energyBulletImpact.b=#energyBulletImpactNormal
 #tooFarCPU=72
 
 
+;#RandomArraySize=25
+;#RandomArraySizeFor=24
+;Random2Ind.b=0
+;Random3Ind.b=0
+;Random7Ind.b=0
+
+;Dim Random2Array.b(#RandomArraySize)
+;For r.b=0 to #RandomArraySizeFor
+;   Random2Array(r)=Rnd(2) 
+;Next
+
+
+;Dim Random3Array.b(#RandomArraySize)
+;For r.b=0 to #RandomArraySizeFor
+;   Random3Array(r)=Rnd(3) 
+;Next
+
+
+;Dim Random7Array.b(#RandomArraySize)
+;For r.b=0 to #RandomArraySizeFor
+;   Random7Array(r)=Rnd(7) 
+;Next
+
+
 chosenWorld.b=-1
 chosenMode.b=0
 
@@ -172,6 +196,8 @@ NEWTYPE .Bonus
   shapeIndex.b ;0:Energy 1:Flamethrower 2:Random 3:Invincible 4:OneShot 5:Speed 6:2Shots
   x.w
   y.w
+  displayed.b ;0  for already displayed, 1 for still one bitmap left, 2 for 2 bitmap left
+  removed.b ;0  for already removed, 1 for still one bitmap left, 2 for 2 bitmap left
 End NEWTYPE
 
 XINCLUDE MJoy.bb2
@@ -251,50 +277,31 @@ Statement PaletteWorld{n.b}
     End Select 
 End Statement
 
-#Random2ArraySize=25
-Random2Ind.b=0
-Dim Random2Array.b(#Random2ArraySize)
-For r.b=0 to (#Random2ArraySize-1)
-   Random2Array(r)=Rnd(2) 
-Next
 
-Statement UpdateIndexRandom2Array{}
-  SHARED Random2Ind
-  Random2Ind+1
-  If Random2Ind>=#Random2ArraySize
-    Random2Ind=0
-  End If
-End Statement
 
-#Random3ArraySize=25
-Random3Ind.b=0
-Dim Random3Array.b(#Random3ArraySize)
-For r.b=0 to (#Random3ArraySize-1)
-   Random3Array(r)=Rnd(3) 
-Next
+;Statement UpdateIndexRandom2Array{n.b}
+;  SHARED Random2Ind
+;  Random2Ind=Random2Ind+1
+;  If Random2Ind>=#RandomArraySize
+;    Random2Ind=0
+;  End If
+;End Statement
 
-Statement UpdateIndexRandom3Array{}
-  SHARED Random3Ind
-  Random3Ind+1
-  If Random3Ind>=#Random3ArraySize
-    Random3Ind=0
-  End If
-End Statement
+;Statement UpdateIndexRandom3Array{n.b}
+;  SHARED Random3Ind
+;  Random3Ind=Random3Ind+1
+;  If Random3Ind>=#RandomArraySize
+ ;   Random3Ind=0
+;  End If
+;End Statement
 
-#Random7ArraySize=25
-Random7Ind.b=0
-Dim Random7Array.b(#Random7ArraySize)
-For r.b=0 to (#Random7ArraySize-1)
-   Random7Array(r)=Rnd(7) 
-Next
-
-Statement UpdateIndexRandom7Array{}
-  SHARED Random7Ind
-  Random7Ind+1
-  If Random7Ind>=#Random7ArraySize
-    Random7Ind=0
-  End If
-End Statement
+;Statement UpdateIndexRandom7Array{n.b}
+;  SHARED Random7Ind
+;  Random7Ind=Random7Ind+1
+;  If Random7Ind>=#RandomArraySize
+;    Random7Ind=0
+;  End If
+;End Statement
 
 
 ;Usage
@@ -308,7 +315,7 @@ End Statement
   flags3.l = $00002 + $00000
   InitCopList 0,44,256,flags3,8,4,0
 
-  VWAIT 50
+  VWAIT 100
   Blitz
   CreateDisplay 0
   InitPalette 3,4
@@ -410,15 +417,12 @@ End Statement
   Free Bitmap 8
 
   Use Bitmap 7
-  Delay_ 50
+  VWAIT 100
   Blitz
   PrintText{"Loading Music : Sunset Rebels by Roald Strauss",10,94}
-  QAMIGA
 
 .LoadTiles:
   Use Bitmap 7
-  Delay_ 50
-  Blitz
   PrintText{"Loading Worlds...",10,100}
   QAMIGA
 
@@ -465,7 +469,7 @@ End Statement
 
 .LoadBobs:
   Use Bitmap 7
-  Delay_ 50
+  VWAIT 100
   Blitz
   PrintText{"Loading Sprites and Bobs...",10,106}
   QAMIGA
@@ -563,7 +567,7 @@ End Statement
 .LoadHUD:
   ; HUD
   Use Bitmap 7
-  Delay_ 50
+  VWAIT 100
   Blitz
   PrintText{"Initiating HUD...",10,118}
   QAMIGA
@@ -583,7 +587,7 @@ End Statement
 
   ; Palette
   Use Bitmap 7
-  Delay_ 50
+  VWAIT 100
   Blitz
   PrintText{"Initiating Palette...",10,124}
   QAMIGA
@@ -602,7 +606,7 @@ End Statement
 
 .LoadSoundEffects:
   Use Bitmap 7
-  Delay_ 50
+  VWAIT 100
   Blitz
   PrintText{"Loading Sound Effects...",10,130}
   QAMIGA
@@ -622,7 +626,7 @@ End Statement
 
 .LoadTitleScreen:
   Use Bitmap 7
-  Delay_ 50
+  VWAIT 100
   Blitz
   PrintText{"Loading Title Screen...",10,136}
 
@@ -654,7 +658,7 @@ End Statement
   Buffer 0,16384
   Buffer 1,16384
 
-  VWAIT 50
+  VWAIT 100
   BLITZ
   cfree2.l=ChipFree
   ffree2.l=FastFree
@@ -676,25 +680,27 @@ End Statement
     vwait
   next
 
-  QAMIGA
+
 
 .TitleScreen:
 
+  QAMIGA
+
   flagsTS.l = $00005 + $00000
   flagsTS2.l = $00005 + $00000
-  InitCopList 0,44,128,flagsTS,0,32,0
-  InitCopList 1,174,120,flagsTS2,0,32,0
+  InitCopList 2,44,128,flagsTS,0,32,0
+  InitCopList 3,174,120,flagsTS2,0,32,0
   LoadPalette 3, "assets/title.iff" 
   InitPalette 4,32
   LoadPalette 5, "assets/hud.iff"
 
-  VWAIT 50
+  VWAIT 100
   Blitz
-  CreateDisplay 0,1
-  DisplayPalette 0, 4
-  DisplayPalette 1, 0
-  DisplayBitMap 0, 8
-  DisplayBitMap 1, 9
+  CreateDisplay 2,3
+  DisplayPalette 2, 4
+  DisplayPalette 3, 0
+  DisplayBitMap 2, 8
+  DisplayBitMap 3, 9
   Free BitMap 7
 
   Use BitMap 8
@@ -738,9 +744,9 @@ End Statement
 
   For i.b = 0 to 50
     FadePalette 3, 4, i / 50
-    DisplayPalette 0, 4
+    DisplayPalette 2, 4
     FadePalette 5, 0, i / 50
-    DisplayPalette 1, 0
+    DisplayPalette 3, 0
     VWAIT
   Next
 
@@ -800,6 +806,7 @@ End Statement
                 VWAIT
               Next
               MTOff
+              FlushBuffer 0
               Goto Game
               actionBuffer=#actionBuf
             Else
@@ -870,14 +877,13 @@ End Statement
 
   For i.b = 0 to 50
     FadePalette 3, 4,1-i / 50
-    DisplayPalette 0, 4
+    DisplayPalette 2, 4
     FadePalette 5, 0,1-i / 50
-    DisplayPalette 1, 0
+    DisplayPalette 3, 0
     VWAIT
   Next
   MTEnd
   MTRemove
-  VWAIT 50
   AMIGA
   End
 
@@ -889,7 +895,7 @@ End Statement
   InitCopList 0,44,16,flags0,8,32,0
   InitCopList 1,62,224,flags1,8,32,0
 
-  VWAIT 50
+  VWAIT 100
   Blitz
   ;Init data
   ;Init player
@@ -1023,9 +1029,10 @@ End Statement
   If (currentLevel>=#levelsCount AND remainingPlayers<2)
     Gosub ScoreEnd
   End If
-  VWAIT 50
-  QAMIGA
   Goto TitleScreen
+
+VWAIT 100
+BlITZ
 
 .InitPlayer:
   UsePath player(cp)
@@ -1051,8 +1058,8 @@ End Statement
   \CPUBufferMoveType=#CPUBufferMoveTypeInit
   Return
 
+
 .BuildWorld:
-  QAMIGA
   Use Bitmap 0
   Cls 0
   For x.b=0 to (#mapWidth-1)
@@ -1062,40 +1069,14 @@ End Statement
       Next
   Next
   CopyBitMap 0,1 ; for double buffering
-  VWAIT 50
-  BLITZ
   Return
-
-.LoadLevels:
-  Use Bitmap 7
-  Delay_ 50
-  Blitz
-  PrintText{"Loading Levels....",10,112}
-  QAMIGA
-
-  
-
-  dummy.b 
-  For lev.b=0 to (#levelsCount-1)
-    If ReadFile(0,"assets/level"+Str$(lev+1)+".dat") 
-      ReadMem 0,&dummy,1
-      ReadMem 0,&dummy,1
-      size.w=#mapSize
-      ReadMem 0,&levels(lev)\map,size
-    Else
-      NPrint "Error reading file."
-    EndIf
-    CloseFile 0
-  Next
-  Return
-
 
 
 .GameLoop:
-  BLITZ
+
   VWait
   DisplayBitMap 1,db
-  MOVE.w #$000,$dff180 ; white
+  MOVE.w #$f00,$dff180 ; ref
   
   timerBuffer=timerBuffer+1
   timingUpdate.b=0
@@ -1109,36 +1090,47 @@ End Statement
   Use Bitmap db
   
   a.w=0
-
-  Dim cpuWalls.b(3)
-  ;  First process dead so they are at the background
-  remainingPlayers=nbPlayer
-  For i.b=0 to (nbPlayer-1)
-    UsePath player(i)
-    If (\dead=1)
-      a.w=50+\avatar*50+40
-      Blit a,\x,\y 
-      remainingPlayers=remainingPlayers-1
-    EndIf
-  Next 
-
-  MOVE.w #$333,$dff180 ; grey
+  MOVE.w #$00f,$dff180 ; blue
 
   UnBuffer db
 
-  MOVE.w #$999,$dff180 ; light grey
+  MOVE.w #$0f0,$dff180 ; green
+
+  Dim cpuWalls.b(3)
+  ;  First process dead so they are at the background
+  For i.b=0 to (nbPlayer-1)
+    UsePath player(i)
+    If (\dead>=2)
+      a.w=50+\avatar*50+40
+      Blit a,\x,\y 
+      \dead=\dead-1
+      If (\dead=2)
+        remainingPlayers=remainingPlayers-1
+      EndIf
+    EndIf
+  Next 
+
+
+
+
+  MOVE.w #$0ff,$dff180 ;  cyan
 
   ;Display Bonus
   USEPATH bonus()
   ResetList bonus()
   While NextItem(bonus())
-    BBlit db,#ShapeIndexBonus+\shapeIndex,\x,\y
+    ;display
+    If \displayed>0
+      Block #ShapeIndexBonus+\shapeIndex,\x,\y
+      \displayed=\displayed-1
+    End If
+    ;catch by a a player
     For p.b=0 to (nbPlayer-1)
       If ((\x+8) LSR 4) = ((player(p)\x+8) LSR 4)
         If ((\y+8) LSR 4) = ((player(p)\y+8) LSR 4)
           If \shapeIndex=2
-            \shapeIndex=Random7Array(Random7Ind)
-            UpdateIndexRandom7Array{}
+            \shapeIndex=Rnd(7) ;Random7Array(Random7Ind)
+            ;UpdateIndexRandom7Array{p}
             If \shapeIndex>1
               \shapeIndex=\shapeIndex+1
             End If
@@ -1162,13 +1154,21 @@ End Statement
               player(p)\bulletImpact=#energyBulletImpact2
               player(p)\timerBonus=#timerBonusInit
           End Select
-          KillItem bonus()
+          \removed=2
           p=nbPlayer ; exit loop
         End If
       End If
     Next
+    ;remove
+    If \removed>0
+      tile.b=levels(currentLevel)\map[(\x LSR 4)+(\y LSR 4)*#mapWidth]
+      Blit tile+currentWorld*10,\x,\y,4
+      \removed=\removed-1
+      If \removed=0
+        KillItem bonus()
+      End If
+    End If
   Wend
-
 
   For i.b=0 to (nbPlayer-1)
     Select i
@@ -1367,8 +1367,8 @@ End Statement
                   \direction=d1
                 End If
                 If (nbDir=2)
-                  c.b=Random2Array(Random2Ind)
-                  UpdateIndexRandom2Array{}
+                  c.b=Rnd(2);Random2Array(Random2Ind)
+                  ;UpdateIndexRandom2Array{nbDir}
                   If (c=1)
                     \direction=d2
                   Else 
@@ -1377,8 +1377,8 @@ End Statement
                 End If
 
                 If (nbDir=3)
-                  c.b=Random3Array(Random3Ind)
-                  UpdateIndexRandom3Array{}
+                  c.b=Rnd(3);Random3Array(Random3Ind)
+                  ;UpdateIndexRandom3Array{c}
                   Select c
                     Case 1
                       \direction=d2
@@ -1554,7 +1554,7 @@ End Statement
                 player(p)\energy=player(p)\energy-\bulletImpact
                 ;player(p)\shot=#shotAnim ;player can still move
                 If (player(p)\energy <= 0)
-                      player(p)\dead=2
+                      player(p)\dead=3
                 EndIf
               End If
             Next
@@ -1727,7 +1727,7 @@ End Statement
                     Endif
                   End If
                   If (player(p)\energy <= 0)
-                    player(p)\dead=2
+                    player(p)\dead=3
                   EndIf
                 EndIf
               EndIf
@@ -1757,23 +1757,27 @@ End Statement
       by.w=1+Rnd(#mapHeight-2)
       If (levels(currentLevel)\map[bx+by*#mapWidth]<2)
         If AddItem(bonus())
-          bonus()\shapeIndex=Random7Array(Random7Ind)
-          UpdateIndexRandom7Array{}
+          bonus()\shapeIndex=Rnd(7) ;Random7Array(Random7Ind)
+          ;UpdateIndexRandom7Array{timingUpdate}
           bonus()\x=bx*16
           bonus()\y=by*16
+          bonus()\displayed=2
+          bonus()\removed=-1
         End If
       Else
-        px.b=Random2Array(Random2Ind)
-        UpdateIndexRandom2Array{}
-        py.b=Random2Array(Random2Ind)
-        UpdateIndexRandom2Array{}
+        px.b=Rnd(2);Random2Array(Random2Ind)
+        ;UpdateIndexRandom2Array{px}
+        py.b=Rnd(2);Random2Array(Random2Ind)
+        ;UpdateIndexRandom2Array{px}
         bx=1+px*(#mapWidth-3)
         by=1+py*(#mapHeight-3)
         If AddItem(bonus())
-          bonus()\shapeIndex=Random7Array(Random7Ind)
-          UpdateIndexRandom7Array{}
+          bonus()\shapeIndex=Rnd(7) ;Random7Array(Random7Ind)
+          ;UpdateIndexRandom7Array{px}
           bonus()\x=bx*16
           bonus()\y=by*16
+          bonus()\displayed=2
+          bonus()\removed=-1
         End If
       EndIf
     End If
@@ -1796,11 +1800,14 @@ End Statement
       EndIf
       If (\energy < 4)
         ahud=2
-      EndIf
-      \previousEnergy=\energy
+      EndIf   
       Block #ShapeIndexHUDAvatar+ahud*4+\avatar,16+\avatar*64,0
-      Boxf 32+\avatar*64,0,48+\avatar*64,15-\energy,0
-      Boxf 32+\avatar*64,15-\energy,48+\avatar*64,15,30 
+      If \previousEnergy>\energy
+        Boxf 32+\avatar*64,0,48+\avatar*64,15-\energy,0
+      Else
+        Boxf 32+\avatar*64,15-\energy,48+\avatar*64,15,30 
+      End If
+      \previousEnergy=\energy
     EndIf
   Next
 
@@ -1817,8 +1824,6 @@ End Statement
   MOVE.w #$f0f,$dff180 ; purple
   Return
 
-
-
 .CPUMove:
   UsePath player(i)
   \deltaX=0
@@ -1828,8 +1833,8 @@ End Statement
       For p.b=0 to (nbPlayer-1)
         If (p<>i AND \targetPlayer = -1)
             If (player(i)\dead = 0)
-              target.b=Random2Array(Random2Ind)
-              UpdateIndexRandom2Array{}
+              target.b=Rnd(2) ;Random2Array(Random2Ind)
+              ;UpdateIndexRandom2Array{target}
               If (target=1) 
                   \targetPlayer=p
               End If
@@ -2109,3 +2114,24 @@ End Statement
   Until (RawStatus($45) OR (MJoyb{1} AND bufferTxt<26))
   Return
 
+
+QAMIGA 
+.LoadLevels:
+  Use Bitmap 7
+  VWAIT 100
+  Blitz
+  PrintText{"Loading Levels....",10,112}
+  QAMIGA
+  dummy.b 
+  For lev.b=0 to (#levelsCount-1)
+    If ReadFile(0,"assets/level"+Str$(lev+1)+".dat") 
+      ReadMem 0,&dummy,1
+      ReadMem 0,&dummy,1
+      size.w=#mapSize
+      ReadMem 0,&levels(lev)\map,size
+    Else
+      NPrint "Error reading file."
+    EndIf
+    CloseFile 0
+  Next
+  Return

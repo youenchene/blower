@@ -800,9 +800,9 @@ End Statement
             If (btn) 
               For i.b = 0 to 50
                 FadePalette 3, 4,1-i / 50
-                DisplayPalette 0, 4
+                DisplayPalette 2, 4
                 FadePalette 5, 0,1-i / 50
-                DisplayPalette 1, 0
+                DisplayPalette 3, 0
                 VWAIT
               Next
               MTOff

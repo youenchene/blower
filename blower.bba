@@ -1307,7 +1307,7 @@ BlITZ
             End If
           Else ; or cpu move
             ;STOP
-            If (currentCPU=cursorCPU) ; only one CPU move recalculation by frame (performance issue)
+            If (currentCPU=cursorCPU) and db=0; only one CPU move recalculation by frame (performance issue)
               ;STOP
               Gosub CPUMove
               \previousVJoyx=vJoyx
@@ -1352,7 +1352,11 @@ BlITZ
 
               ; CPU behavior on wall it
               If currentJoy<0
-                If (currentCPU=cursorCPU)  ; only one CPu by frame on behavior
+                If (currentCPU=cursorCPU) and db=1 ; only one CPu by frame on behavior
+                  nextCurrentCPU=currentCPU+1
+                  If (nextCurrentCPU=nbCPU)
+                    nextCurrentCPU=0
+                  End If
                   If (paValid=0 AND pbValid=0)
                     nbDir.b=0
                     d1.b=-1
@@ -1747,7 +1751,7 @@ BlITZ
                   player(p)\previousEnergy=player(p)\energy
                   player(p)\energy=player(p)\energy-\bulletImpact
                   player(p)\shot=#shotAnim
-                  ; CPU if been shot new target is the avatar who shot teh CPU
+                  ; CPU if been shot new target is the avatar who shot the CPU
                   If player(p)\joy=-1
                     player(p)\targetPlayer=\srcAvatar
                   End If

@@ -33,7 +33,7 @@ NoCli
 WBStartup
 CloseWorkBench_
 
-cfree1.l=ChipFree
+;cfree1.l=ChipFree
 
 DEFTYPE .w
 Amiga
@@ -81,8 +81,8 @@ energyBulletImpact.b=#energyBulletImpactNormal
 ;CPU Behaviour
 #waitBulletCPU=35
 #CPUBufferStateInit=70
-#CPUBufferMoveTypeAvoidInit=70
-#CPUBufferMoveTypeInit=120
+#CPUBufferMoveTypeAvoidInit=30
+#CPUBufferMoveTypeInit=40
 #distanceCPUShot=16
 #distanceCPU=9
 #tooFarCPU=72
@@ -161,6 +161,8 @@ NEWTYPE .player
   bufDirection.w
   deltaX.w
   deltaY.w
+  absDeltaX.w
+  absDeltaY.w
   score.w
   bulletImpact.b
   timerBonus.w
@@ -171,6 +173,8 @@ NEWTYPE .player
   CPUMoveType.b  ;0 get closer 1  avoid
   CPUBufferState.w 
   CPUBufferMoveType.w 
+  previousVJoyx.b
+  previousVJoyy.b
 End NEWTYPE 
 
 NEWTYPE .Bullet
@@ -658,14 +662,14 @@ End Statement
   Buffer 1,16384
 
 
-  cfree2.l=ChipFree
-  cfree.l=(cfree1-cfree2)/1024
-  
-  VWAIT 100
+  ;cfree2.l=ChipFree
+  ;cfree.l=(cfree1-cfree2)/1024
+
+  ;$VWAIT 100
   BLITZ
-  Use Bitmap 7
-  PrintText{"Memory footprint Chip:"+str$(cfree),10,142}
-  PrintText{"Remaining Chip:"+str$(cfree2),10,148}
+  ;Use Bitmap 7
+  ;PrintText{"Memory footprint Chip:"+str$(cfree),10,142}
+  ;PrintText{"Remaining Chip:"+str$(cfree2),10,148}
   
 
   Use Bitmap 7
@@ -952,6 +956,9 @@ End Statement
       End Select
     Next
 
+    ;nbCPU
+    nbCPU.b=0
+    currentCPU.b=0
     ;Init HUD
     Use Bitmap 2
     Cls 0
@@ -961,6 +968,9 @@ End Statement
       If (cjoy >= 0 and cjoy < 2)
         cjoy=1-cjoy ; invert because of port 2 as joy port on amiga
       EndIf
+      If cjoy = -1
+        nbCPU=nbCPU+1
+      End If
       Block #ShapeIndexHUDPlayer+cjoy,avatar*64,0
       Block #ShapeIndexHUDAvatar+avatar,16+avatar*64,0
       Boxf 32+avatar*64,15-player(i)\energy,48+avatar*64,15,30
@@ -1101,12 +1111,12 @@ BlITZ
       \dead=\dead-1
       If (\dead=2)
         remainingPlayers=remainingPlayers-1
+        If (player(b)\joy=-1)
+          nbCPU=nbCPU-1
+        End If
       EndIf
     EndIf
-  Next 
-
-
-
+  Next
 
   MOVE.w #$0ff,$dff180 ;  cyan
 
@@ -1121,36 +1131,38 @@ BlITZ
     End If
     ;catch by a a player
     For p.b=0 to (nbPlayer-1)
-      If ((\x+8) LSR 4) = ((player(p)\x+8) LSR 4)
-        If ((\y+8) LSR 4) = ((player(p)\y+8) LSR 4)
-          If \shapeIndex=2
-            \shapeIndex=Rnd(7) ;Random7Array(Random7Ind)
-            ;UpdateIndexRandom7Array{p}
-            If \shapeIndex>1
-              \shapeIndex=\shapeIndex+1
+      If (player(p)\dead <> 1)
+        If ((\x+8) LSR 4) = ((player(p)\x+8) LSR 4)
+          If ((\y+8) LSR 4) = ((player(p)\y+8) LSR 4)
+            If \shapeIndex=2
+              \shapeIndex=Rnd(7) ;Random7Array(Random7Ind)
+              ;UpdateIndexRandom7Array{p}
+              If \shapeIndex>1
+                \shapeIndex=\shapeIndex+1
+              End If
             End If
+            Select \shapeIndex
+              Case 0 ; Energy
+                player(p)\energy=15
+              Case 1 ; FlameThrower
+                player(p)\flameThrower=1
+                player(p)\timerBonus=#timerBonusInit
+              Case 3 ; Invincible
+                player(p)\invincible=1
+                player(p)\timerBonus=#timerBonusInit
+              Case 4 ; 1 shots
+                player(p)\bulletImpact=#energyBulletImpact1
+                player(p)\timerBonus=#timerBonusInit
+              Case 5 ; Speed
+                player(p)\stepsize=#stepSizeBoost
+                player(p)\timerBonus=#timerBonusInit
+              Case 6 ; 2shots
+                player(p)\bulletImpact=#energyBulletImpact2
+                player(p)\timerBonus=#timerBonusInit
+            End Select
+            \removed=2
+            p=nbPlayer ; exit loop
           End If
-          Select \shapeIndex
-            Case 0 ; Energy
-              player(p)\energy=15
-            Case 1 ; FlameThrower
-              player(p)\flameThrower=1
-              player(p)\timerBonus=#timerBonusInit
-            Case 3 ; Invincible
-              player(p)\invincible=1
-              player(p)\timerBonus=#timerBonusInit
-            Case 4 ; 1 shots
-              player(p)\bulletImpact=#energyBulletImpact1
-              player(p)\timerBonus=#timerBonusInit
-            Case 5 ; Speed
-              player(p)\stepsize=#stepSizeBoost
-              player(p)\timerBonus=#timerBonusInit
-            Case 6 ; 2shots
-              player(p)\bulletImpact=#energyBulletImpact2
-              player(p)\timerBonus=#timerBonusInit
-          End Select
-          \removed=2
-          p=nbPlayer ; exit loop
         End If
       End If
     Next
@@ -1165,6 +1177,8 @@ BlITZ
     End If
   Wend
 
+  cursorCPU.b=0 
+  nextCurrentCPU.b=currentCPU
   For i.b=0 to (nbPlayer-1)
     Select i
       Case 0
@@ -1201,431 +1215,451 @@ BlITZ
           EndIf
         EndIf
       Else
-
-      ; Manage End of bonus
-      If (\timerBonus > 0)
-        \timerBonus=\timerBonus-1
-        If (\timerBonus=0)
-          ; End of bonus timer
-          \bulletImpact=energyBulletImpact
-          \stepsize=#stepSizeDefault
-          \invincible=0
-          \flameThrower=0
-        End If
-      End If
-
-      currentJoy.b=\joy
-      buttonOn.b=0
-
-      If (currentJoy >= 0  AND currentJoy < 4)
-        ;Get Joy Button
-        buttonOn=MJoyb{currentJoy}
-        ; Buffer Joy Button to avoid 2 bullet at the same time 
-        If (\waitBullet>0)
-          \waitBullet=\waitBullet-1
-        EndIf
-      Else ;CPU alternatemove to Shoot and shoot
-        If \CPUBufferState>0
-          \CPUBufferState=\CPUBufferState-1
-        Else
-          \CPUState=1-\CPUState  
-          If \CPUState=0 ; if move and shoot (0) switch after shoot
-            \CPUBufferState=#CPUBufferStateInit 
+        ; Manage End of bonus
+        If (\timerBonus > 0)
+          \timerBonus=\timerBonus-1
+          If (\timerBonus=0)
+            ; End of bonus timer
+            \bulletImpact=energyBulletImpact
+            \stepsize=#stepSizeDefault
+            \invincible=0
+            \flameThrower=0
           End If
         End If
-        If (\waitBullet>0)
-          \waitBullet=\waitBullet-1
-        Else
-          If \CPUState=0
-            If (\bullets>0)
-              Select \direction
-                Case 0
-                  If (Abs(\deltaX)<#distanceCPUShot)
-                    If (\deltaY>0)
-                      buttonOn=1
-                    End If
-                  End If
-                Case 1
-                  If (Abs(\deltaY)<#distanceCPUShot)
-                    If (\deltaX<0)
-                      buttonOn=1
-                    End If
-                  End If
-                Case 2
-                  If (Abs(\deltaX)<#distanceCPUShot)
-                    If (\deltaY<0)
-                      buttonOn=1
-                    End If
-                  End If
-                Case 3
-                  If (Abs(\deltaY)<#distanceCPUShot)
-                    If (\deltaX>0)
-                      buttonOn=1
-                    End If
-                  End If
-              End Select
+
+        currentJoy.b=\joy
+        buttonOn.b=0
+
+        If (currentJoy >= 0  AND currentJoy < 4)
+          ;Get Joy Button
+          buttonOn=MJoyb{currentJoy}
+          ; Buffer Joy Button to avoid 2 bullet at the same time 
+          If (\waitBullet>0)
+            \waitBullet=\waitBullet-1
+          EndIf
+        Else ;CPU alternatemove to Shoot and shoot
+
+          If \CPUBufferState>0
+            \CPUBufferState=\CPUBufferState-1
+          Else
+            \CPUState=1-\CPUState  
+            If \CPUState=0 ; if move and shoot (0) switch after shoot
+              \CPUBufferState=#CPUBufferStateInit 
             End If
           End If
-       End If
-      End If
+          If (\waitBullet>0)
+            \waitBullet=\waitBullet-1
+          Else
+            If \CPUState=0
+              If (\bullets>0)
+                Select \direction
+                  Case 0
+                    If (\absDeltaX<#distanceCPUShot)
+                      If (\deltaY>0)
+                        buttonOn=1
+                      End If
+                    End If
+                  Case 1
+                    If (\absDeltaY<#distanceCPUShot)
+                      If (\deltaX<0)
+                        buttonOn=1
+                      End If
+                    End If
+                  Case 2
+                    If (\absDeltaX<#distanceCPUShot)
+                      If (\deltaY<0)
+                        buttonOn=1
+                      End If
+                    End If
+                  Case 3
+                    If (\absDeltaY<#distanceCPUShot)
+                      If (\deltaX>0)
+                        buttonOn=1
+                      End If
+                    End If
+                End Select
+              End If
+            End If
+        End If
+        End If
 
-      ; Interaction
-      If (buttonOn=0) ;Move or shoot  - 1 move
-        vJoyx.b=0
-        vJoyy.b=0
-        If (currentJoy >= 0  AND currentJoy < 4) ; player move
-          ;==== Player
-          vJoyx.b=MJoyx{currentJoy}
-          vJoyy.b=MJoyy{currentJoy}
+        ; Interaction
+        If (buttonOn=0) ;Move or shoot  - 1 move
+          vJoyx.b=0
+          vJoyy.b=0
+          If (currentJoy >= 0  AND currentJoy < 4) ; player move
+            ;==== Player
+            vJoyx.b=MJoyx{currentJoy}
+            vJoyy.b=MJoyy{currentJoy}
+            If (vJoyx <> 0 OR vJoyy <> 0)
+              If vJoyx=1
+                \direction=1
+              End If 
+              If vJoyx=-1
+                \direction=3
+              End If
+              If vJoyy=1
+                \direction=2
+              End If
+              If vJoyy=-1
+                \direction=0
+              End If 
+            End If
+          Else ; or cpu move
+            ;STOP
+            If (currentCPU=cursorCPU) ; only one CPU move recalculation by frame (performance issue)
+              ;STOP
+              Gosub CPUMove
+              \previousVJoyx=vJoyx
+              \previousVJoyy=vJoyy
+              nextCurrentCPU=currentCPU+1
+              If (nextCurrentCPU=nbCPU)
+                nextCurrentCPU=0
+              End If
+            Else
+              vJoyx=\previousVJoyx
+              vJoyy=\previousVJoyy
+            End If
+            cursorCPU=cursorCPU+1
+          End If
           If (vJoyx <> 0 OR vJoyy <> 0)
-            If vJoyx=1
-              \direction=1
-            End If 
-            If vJoyx=-1
-              \direction=3
-            End If
-            If vJoyy=1
-              \direction=2
-            End If
-            If vJoyy=-1
-              \direction=0
-            End If 
-          End If
-        Else ; or cpu move
-          Gosub CPUMove
-        End If
-        If (vJoyx <> 0 OR vJoyy <> 0)
-          \frameCounter=\frameCounter+1
-          If (\frameCounter=\frameAnim)
-            ; next move
-            next_x.w=\x
-            next_y.w=\y
+            \frameCounter=\frameCounter+1
+            If (\frameCounter=\frameAnim)
+              ; next move
+              next_x.w=\x
+              next_y.w=\y
 
-            ;Wall Collision
-            If (\direction=1)
-              pa.w=Point(next_x+16,next_y+1)
-              pb.w=Point(next_x+16,next_y+14)
-            End If
-            If (\direction=3)
-              pa.w=Point(next_x-1,next_y+1)
-              pb.w=Point(next_x-1,next_y+14)
-            End If
-            If (\direction=0)
-              pa.w=Point(next_x+3,next_y-1)
-              pb.w=Point(next_x+12,next_y-1)
-            End If
-            If (\direction=2)
-              pa.w=Point(next_x+3,next_y+16)
-              pb.w=Point(next_x+12,next_y+16)
-            End If
+              ;Wall Collision
+              If (\direction=1)
+                pa.w=Point(next_x+16,next_y+1)
+                pb.w=Point(next_x+16,next_y+14)
+              End If
+              If (\direction=3)
+                pa.w=Point(next_x-1,next_y+1)
+                pb.w=Point(next_x-1,next_y+14)
+              End If
+              If (\direction=0)
+                pa.w=Point(next_x+3,next_y-1)
+                pb.w=Point(next_x+12,next_y-1)
+              End If
+              If (\direction=2)
+                pa.w=Point(next_x+3,next_y+16)
+                pb.w=Point(next_x+12,next_y+16)
+              End If
 
-            ;check colors in front of avatar
-            paValid.b=(pa < #wallColor1 OR pa > #wallColor2)
-            pbValid.b=(pb < #wallColor1 OR pb > #wallColor2)
+              ;check colors in front of avatar
+              paValid.b=(pa < #wallColor1 OR pa > #wallColor2)
+              pbValid.b=(pb < #wallColor1 OR pb > #wallColor2)
 
-            ; CPU behavior on wall it
-            If currentJoy<0
-              If (paValid=0 AND pbValid=0)
-                nbDir.b=0
-                d1.b=-1
-                d2.b=-1
-                d3.b=-1
-                For d.b=0 to (nbPlayer-1)
-                  If (d<>\direction)
-                    pw.b=-2
-                    Select d
-                      Case 0
-                        pw=Point(next_x+8,next_y-12)
-                      Case 1
-                        pw=Point(next_x+24,next_y+12)
-                      Case 2
-                        pw=Point(next_x+8,next_y+28)
-                      Case 3
-                        pw=Point(next_x-8,next_y+12)
-                    End Select
-                    cdir=(pw < #wallColor1 OR pw > #wallColor2)
-                    If cdir
-                      nbDir=nbDir+1
-                      If (d1 = -1)
-                        d1=d
-                      Else 
-                        If (d2 = -1)
-                          d2=d
+              ; CPU behavior on wall it
+              If currentJoy<0
+                If (paValid=0 AND pbValid=0)
+                  nbDir.b=0
+                  d1.b=-1
+                  d2.b=-1
+                  d3.b=-1
+                  For d.b=0 to (nbPlayer-1)
+                    If (d<>\direction)
+                      pw.b=-2
+                      Select d
+                        Case 0
+                          pw=Point(next_x+8,next_y-12)
+                        Case 1
+                          pw=Point(next_x+24,next_y+12)
+                        Case 2
+                          pw=Point(next_x+8,next_y+28)
+                        Case 3
+                          pw=Point(next_x-8,next_y+12)
+                      End Select
+                      cdir=(pw < #wallColor1 OR pw > #wallColor2)
+                      If cdir
+                        nbDir=nbDir+1
+                        If (d1 = -1)
+                          d1=d
                         Else 
-                          d3=d
+                          If (d2 = -1)
+                            d2=d
+                          Else 
+                            d3=d
+                          End If
                         End If
                       End If
                     End If
-                  End If
-                next
-                If (nbDir=1)
-                  \direction=d1
-                End If
-                If (nbDir=2)
-                  c.b=Rnd(2);Random2Array(Random2Ind)
-                  ;UpdateIndexRandom2Array{nbDir}
-                  If (c=1)
-                    \direction=d2
-                  Else 
+                  next
+                  If (nbDir=1)
                     \direction=d1
                   End If
-                End If
-
-                If (nbDir=3)
-                  c.b=Rnd(3);Random3Array(Random3Ind)
-                  ;UpdateIndexRandom3Array{c}
-                  Select c
-                    Case 1
+                  If (nbDir=2)
+                    c.b=Rnd(2);Random2Array(Random2Ind)
+                    ;UpdateIndexRandom2Array{nbDir}
+                    If (c=1)
                       \direction=d2
-                    Case 2 
+                    Else 
                       \direction=d1
-                    Default
-                      \direction=d3
-                  End Select
-                End If
-                
+                    End If
+                  End If
 
-                ;If (\direction=1 OR \direction=3)
-                ;  If (\deltaY>0)
-                ;    \direction=\direction-1
-                ;  Else
-                ;    \direction=\direction+1
-                ;  End If
-                ;End If 
-                ; If (\direction=0 OR \direction=2)
-                ;  If (\deltaX>0)
-                ;    \direction=\direction-1
-                ;  Else
-                ;    \direction=\direction+1
-                ;  End If
-                ;End If 
-                ;if (\direction > 3):\direction=0:End If
-                ;if (\direction < 0):\direction=3:End If
-                \bufDirection=#bufferDirectionWall
-              End If
-            End If
+                  If (nbDir=3)
+                    c.b=Rnd(3);Random3Array(Random3Ind)
+                    ;UpdateIndexRandom3Array{c}
+                    Select c
+                      Case 1
+                        \direction=d2
+                      Case 2 
+                        \direction=d1
+                      Default
+                        \direction=d3
+                    End Select
+                  End If
+                  
 
-            ;let's move
-            If (paValid=-1 AND pbValid=-1) ;Move
-              If (\direction=1 OR \direction=3)
-                \x=\x+vJoyx*\stepsize
+                  ;If (\direction=1 OR \direction=3)
+                  ;  If (\deltaY>0)
+                  ;    \direction=\direction-1
+                  ;  Else
+                  ;    \direction=\direction+1
+                  ;  End If
+                  ;End If 
+                  ; If (\direction=0 OR \direction=2)
+                  ;  If (\deltaX>0)
+                  ;    \direction=\direction-1
+                  ;  Else
+                  ;    \direction=\direction+1
+                  ;  End If
+                  ;End If 
+                  ;if (\direction > 3):\direction=0:End If
+                  ;if (\direction < 0):\direction=3:End If
+                  \bufDirection=#bufferDirectionWall
+                End If
               End If
-              If (\direction=0 OR \direction=2)
-                \y=\y+vJoyy*\stepsize
-              End If
-            EndIf
-            If (paValid=-1 AND pbValid=0) ;Avoid obstacle
-              If (\direction=0 OR \direction=2)
-                \x=\x-1
-              Else
-                \y=\y-1
-              End If
-            EndIf
-            If (paValid=0 AND pbValid=-1) ;Avoid obstacle
-              if (\direction=0 OR \direction=2)
-                \x=\x+1
-              Else
-                \y=\y+1
-              End If
-            End If
 
-            
-            ;Animation
-            \frameCounter=0
-            If (\animIndex = 3)
-              \animIndex=0
-                If AddItem(sndevents())
-                  If \x >= 160
-                    SFXInit{&sndevents(),5+currentWorld,32,1,5}
-                  Else
-                    SFXInit{&sndevents(),5+currentWorld,32,0,5}
-                  Endif
+              ;let's move
+              If (paValid=-1 AND pbValid=-1) ;Move
+                If (\direction=1 OR \direction=3)
+                  \x=\x+vJoyx*\stepsize
                 End If
-            Else
-              \animIndex=\animIndex+1
-            Endif
-          End If
-        Endif
-      Else
-        ; Fire
-        \frameCounter=0
-        \animIndex=0
-        If (\flameThrower=1)
-          
-          If (\bufferFlame<=0)
-            \bufferFlame=#bufferFlamethrower
-          Else 
-            \bufferFlame=\bufferFlame-1
-          End if
-          fx.w=0
-          fy.w=0
-          
-          Dim cols.b(nbPlayer-1)
-          Select \direction
-            Case 0
-            ;display
-              For f.b=0 to 2
-                fy.w=\y-16*(f+1)
-                If (fy>0 AND fy<208)
-                  BBlit db,#ShapeIndexFlam+f,\x,fy
+                If (\direction=0 OR \direction=2)
+                  \y=\y+vJoyy*\stepsize
                 End If
-              Next
-              ;collision
-              For p.b=0 to (nbPlayer-1)
-                If (i <> p)
-                  If (player(p)\invincible=0)
-                    If (player(p)\dead = 0) ; not dead
-                      ;Box xb-7,yb-7,xb-7+14,yb-7+14,8;debug
-                      If RectsHit(\x,\y-48,16,48,player(p)\x,player(p)\y,16,16)
-                      cols.b(p)=-1
-                      End IF
-                    End If
-                  End If
+              EndIf
+              If (paValid=-1 AND pbValid=0) ;Avoid obstacle
+                If (\direction=0 OR \direction=2)
+                  \x=\x-1
+                Else
+                  \y=\y-1
                 End If
-              Next
-            Case 1
-              For f.b=0 to 2
-                fx=\x+16*(f+1)
-                If (fx>0 AND fx<304)
-                  BBlit db,#ShapeIndexFlam+3+f,fx,\y
-                End if
-              Next
-              ;collision
-              For p.b=0 to (nbPlayer-1)
-                If (i <> p)
-                  If (player(p)\invincible=0)
-                    If (player(p)\dead = 0) ; not dead
-                      If RectsHit(\x+16,\y,48,16,player(p)\x,player(p)\y,16,16)
-                      cols.b(p)=-1
-                      End IF
-                    End If
-                  End If
+              EndIf
+              If (paValid=0 AND pbValid=-1) ;Avoid obstacle
+                if (\direction=0 OR \direction=2)
+                  \x=\x+1
+                Else
+                  \y=\y+1
                 End If
-              Next
-            Case 2
-              For f.b=0 to 2
-                fy.w=\y+16*(f+1)
-                If (fy>0 AND fy<208)
-                  BBlit db,#ShapeIndexFlam+6+f,\x,fy
-                End If
-              Next
-              ;collision
-              For p.b=0 to (nbPlayer-1)
-                If (i <> p)
-                  If (player(p)\invincible=0)
-                    If (player(p)\dead = 0) ; not dead
-                      If RectsHit(\x,\y+16,16,48,player(p)\x,player(p)\y,16,16)
-                      cols.b(p)=-1
-                      End IF
-                    End If
-                  End If
-                End If
-              Next
-            Case 3
-              For f.b=0 to 2
-                fx=\x-16*(f+1)
-                If (fx>0 AND fx<304)
-                  BBlit db,#ShapeIndexFlam+9+f,fx,\y
-                End If
-              Next
-              ;collision
-              For p.b=0 to (nbPlayer-1)
-                If (i <> p)
-                  If (player(p)\invincible=0)
-                    If (player(p)\dead = 0) ; not dead
-                    ;Box \x,\y,\x-48,16,10;debug
-                      If RectsHit(\x-48,\y,48,16,player(p)\x,player(p)\y,16,16)
-                        cols.b(p)=-1
-                      End IF
-                    End If
-                  End If
-                End If
-              Next
-          End Select
-          If (\bufferFlame=0)
-            For p.b=0 to (nbPlayer-1)
-              If (cols(p))
-                player(p)\previousEnergy=player(p)\energy
-                player(p)\energy=player(p)\energy-\bulletImpact
-                ;player(p)\shot=#shotAnim ;player can still move
-                If (player(p)\energy <= 0)
-                      player(p)\dead=3
-                EndIf
               End If
-            Next
-          End If
-        Else
-          If (\waitBullet<=0)
-            If (buttonOn)
-              If (\bullets>0)
-                If AddItem(bullets())
-                  bullets()\direction=\direction
-                  If (\direction=0)
-                    bullets()\y=\y-4    
-                  EndIf
-                  If (\direction=1)
-                    bullets()\x=\x+15 
-                  EndIf
-                  If (\direction=2)
-                    bullets()\y=\y+15   
-                  EndIf
-                  If (\direction=3)
-                    bullets()\x=\x-4   
-                  EndIf
-                  bullets()\y1=\y+6
-                  bullets()\y2=\y+8
-                  bullets()\x1=\x
-                  bullets()\x2=\x+2
-                  bullets()\animIndex=0
-                  bullets()\player=i
-                  bullets()\speed=#speedBullet
-                  bullets()\init=#initAnimCount
-                  bullets()\endLife=-1
-                  bullets()\channel=2-\bullets
-                  bullets()\srcAvatar=\avatar
-                  bullets()\bulletImpact=\bulletImpact
-                  if (currentJoy=-1)
-                    \waitBullet=#waitBulletCPU
-                    ; if shoot then move
-                    \CPUState=1
-                    \CPUBufferState=#CPUBufferStateInit  
-                  Else
-                    \waitBullet=#waitBullet
-                  End If
-                  \bullets=\bullets-1
+
+              
+              ;Animation
+              \frameCounter=0
+              If (\animIndex = 3)
+                \animIndex=0
                   If AddItem(sndevents())
-                    sndIndex.b=0
-                    If (\bulletImpact>6)
-                      sndIndex=1
-                    End If
                     If \x >= 160
-                      SFXInit{&sndevents(),sndIndex,64,1,10}
+                      SFXInit{&sndevents(),5+currentWorld,32,1,5}
                     Else
-                      SFXInit{&sndevents(),sndIndex,64,0,10}
+                      SFXInit{&sndevents(),5+currentWorld,32,0,5}
                     Endif
+                  End If
+              Else
+                \animIndex=\animIndex+1
+              Endif
+            End If
+          Endif
+        Else
+          ; Fire
+          \frameCounter=0
+          \animIndex=0
+          If (\flameThrower=1)
+            
+            If (\bufferFlame<=0)
+              \bufferFlame=#bufferFlamethrower
+            Else 
+              \bufferFlame=\bufferFlame-1
+            End if
+            fx.w=0
+            fy.w=0
+            
+            Dim cols.b(nbPlayer-1)
+            Select \direction
+              Case 0
+              ;display
+                For f.b=0 to 2
+                  fy.w=\y-16*(f+1)
+                  If (fy>0 AND fy<208)
+                    BBlit db,#ShapeIndexFlam+f,\x,fy
+                  End If
+                Next
+                ;collision
+                For p.b=0 to (nbPlayer-1)
+                  If (i <> p)
+                    If (player(p)\invincible=0)
+                      If (player(p)\dead = 0) ; not dead
+                        ;Box xb-7,yb-7,xb-7+14,yb-7+14,8;debug
+                        If RectsHit(\x,\y-48,16,48,player(p)\x,player(p)\y,16,16)
+                        cols.b(p)=-1
+                        End IF
+                      End If
+                    End If
+                  End If
+                Next
+              Case 1
+                For f.b=0 to 2
+                  fx=\x+16*(f+1)
+                  If (fx>0 AND fx<304)
+                    BBlit db,#ShapeIndexFlam+3+f,fx,\y
+                  End if
+                Next
+                ;collision
+                For p.b=0 to (nbPlayer-1)
+                  If (i <> p)
+                    If (player(p)\invincible=0)
+                      If (player(p)\dead = 0) ; not dead
+                        If RectsHit(\x+16,\y,48,16,player(p)\x,player(p)\y,16,16)
+                        cols.b(p)=-1
+                        End IF
+                      End If
+                    End If
+                  End If
+                Next
+              Case 2
+                For f.b=0 to 2
+                  fy.w=\y+16*(f+1)
+                  If (fy>0 AND fy<208)
+                    BBlit db,#ShapeIndexFlam+6+f,\x,fy
+                  End If
+                Next
+                ;collision
+                For p.b=0 to (nbPlayer-1)
+                  If (i <> p)
+                    If (player(p)\invincible=0)
+                      If (player(p)\dead = 0) ; not dead
+                        If RectsHit(\x,\y+16,16,48,player(p)\x,player(p)\y,16,16)
+                        cols.b(p)=-1
+                        End IF
+                      End If
+                    End If
+                  End If
+                Next
+              Case 3
+                For f.b=0 to 2
+                  fx=\x-16*(f+1)
+                  If (fx>0 AND fx<304)
+                    BBlit db,#ShapeIndexFlam+9+f,fx,\y
+                  End If
+                Next
+                ;collision
+                For p.b=0 to (nbPlayer-1)
+                  If (i <> p)
+                    If (player(p)\invincible=0)
+                      If (player(p)\dead = 0) ; not dead
+                      ;Box \x,\y,\x-48,16,10;debug
+                        If RectsHit(\x-48,\y,48,16,player(p)\x,player(p)\y,16,16)
+                          cols.b(p)=-1
+                        End IF
+                      End If
+                    End If
+                  End If
+                Next
+            End Select
+            If (\bufferFlame=0)
+              For p.b=0 to (nbPlayer-1)
+                If (cols(p))
+                  player(p)\previousEnergy=player(p)\energy
+                  player(p)\energy=player(p)\energy-\bulletImpact
+                  ;player(p)\shot=#shotAnim ;player can still move
+                  a=50+\avatar*50+\direction*10
+                  If (player(p)\energy <= 0)
+                        player(p)\dead=3
+                  EndIf
+                End If
+              Next
+            End If
+          Else
+            If (\waitBullet<=0)
+              If (buttonOn)
+                If (\bullets>0)
+                  If AddItem(bullets())
+                    bullets()\direction=\direction
+                    If (\direction=0)
+                      bullets()\y=\y-4    
+                    EndIf
+                    If (\direction=1)
+                      bullets()\x=\x+15 
+                    EndIf
+                    If (\direction=2)
+                      bullets()\y=\y+15   
+                    EndIf
+                    If (\direction=3)
+                      bullets()\x=\x-4   
+                    EndIf
+                    bullets()\y1=\y+6
+                    bullets()\y2=\y+8
+                    bullets()\x1=\x
+                    bullets()\x2=\x+2
+                    bullets()\animIndex=0
+                    bullets()\player=i
+                    bullets()\speed=#speedBullet
+                    bullets()\init=#initAnimCount
+                    bullets()\endLife=-1
+                    bullets()\channel=2-\bullets
+                    bullets()\srcAvatar=\avatar
+                    bullets()\bulletImpact=\bulletImpact
+                    if (currentJoy=-1)
+                      \waitBullet=#waitBulletCPU
+                      ; if shoot then move
+                      \CPUState=1
+                      \CPUBufferState=#CPUBufferStateInit  
+                    Else
+                      \waitBullet=#waitBullet
+                    End If
+                    \bullets=\bullets-1
+                    If AddItem(sndevents())
+                      sndIndex.b=0
+                      If (\bulletImpact>6)
+                        sndIndex=1
+                      End If
+                      If \x >= 160
+                        SFXInit{&sndevents(),sndIndex,64,1,10}
+                      Else
+                        SFXInit{&sndevents(),sndIndex,64,0,10}
+                      Endif
+                    End If
                   End If
                 End If
               End If
             End If
           End If
         End If
+        a=\avatar*50+51+\direction*10+\animIndex
       End If
-    End If
-    a=\avatar*50+51+\direction*10+\animIndex
-    ;draw bobs
-    If (\x<16):\x=16:EndIf
-    If (\x>288):\x=288:EndIf
-    If (\y<16):\y=16:EndIf
-    If (\y>192):\y=192:EndIf
-    If (\invincible=0)
-      BBlit db,a,\x,\y 
-    Else
-      If (db=0)
-        BBlit db,a,\x,\y  ;blinking if invincible
+      
+      ;draw bobs
+      If (\x<16):\x=16:EndIf
+      If (\x>288):\x=288:EndIf
+      If (\y<16):\y=16:EndIf
+      If (\y>192):\y=192:EndIf
+      If a=0
+         a=\avatar*50+51+\direction*10+\animIndex
+      End If 
+      If (\invincible=0)
+        BBlit db,a,\x,\y 
+      Else
+        If (db=0)
+          BBlit db,a,\x,\y  ;blinking if invincible
+        End If
       End If
-    End If
     End If
   next
+  currentCPU=nextCurrentCPU
 
   MOVE.w #$f00,$dff180 ; red
 
@@ -1732,7 +1766,13 @@ BlITZ
       EndIf
     Endif
     ;Display
-    BBlit db,#ShapeIndexBullet+1+\direction*3+\animIndex,xb,yb,\player*2+\channel
+    If \animIndex=1
+      If db=0
+        BBlit db,#ShapeIndexBullet+1+\direction*3+\animIndex,xb,yb
+      End If
+    Else
+      BBlit db,#ShapeIndexBullet+1+\direction*3+\animIndex,xb,yb
+    End If
     If (\endLife=0)
       player(\player)\bullets=player(\player)\bullets+1
       KillItem bullets()  
@@ -1784,26 +1824,28 @@ BlITZ
   ;HUD Update
   For p.b=0 to (nbPlayer-1)
     UsePath player(p)
-    If (\energy <> \previousEnergy)
-      If (switchB2=0)
-          Use Bitmap 2
-          switchB2=-1
+    if (\dead <> 1)
+      If (\energy <> \previousEnergy)
+        If (switchB2=0)
+            Use Bitmap 2
+            switchB2=-1
+        End If
+        ahud.b=0
+        If (\energy < 10)
+          ahud=1
+        EndIf
+        If (\energy < 4)
+          ahud=2
+        EndIf   
+        Block #ShapeIndexHUDAvatar+ahud*4+\avatar,16+\avatar*64,0
+        If \previousEnergy>\energy
+          Boxf 32+\avatar*64,0,48+\avatar*64,15-\energy,0
+        Else
+          Boxf 32+\avatar*64,15-\energy,48+\avatar*64,15,30 
+        End If
+        \previousEnergy=\energy
       End If
-      ahud.b=0
-      If (\energy < 10)
-        ahud=1
-      EndIf
-      If (\energy < 4)
-        ahud=2
-      EndIf   
-      Block #ShapeIndexHUDAvatar+ahud*4+\avatar,16+\avatar*64,0
-      If \previousEnergy>\energy
-        Boxf 32+\avatar*64,0,48+\avatar*64,15-\energy,0
-      Else
-        Boxf 32+\avatar*64,15-\energy,48+\avatar*64,15,30 
-      End If
-      \previousEnergy=\energy
-    EndIf
+    End If
   Next
 
   MOVE.w #$ff0,$dff180 ; yellow
@@ -1823,17 +1865,21 @@ BlITZ
   UsePath player(i)
   \deltaX=0
   \deltaY=0
+  selected.b=0
   ;Target player to shoot
   If (\targetPlayer=-1)
       For p.b=0 to (nbPlayer-1)
-        If (p<>i AND \targetPlayer = -1)
-            If (player(i)\dead = 0)
-              target.b=Rnd(2) ;Random2Array(Random2Ind)
-              ;UpdateIndexRandom2Array{target}
-              If (target=1) 
-                  \targetPlayer=p
+        If selected=0
+          If (p<>i AND \targetPlayer = -1 )
+              If (player(i)\dead = 0)
+                target.b=Rnd(2) ;Random2Array(Random2Ind)
+                ;UpdateIndexRandom2Array{target}
+                If (target=1) 
+                    \targetPlayer=p
+                    selected=1
+                End If
               End If
-            End If
+          End If
         End If
       Next
   End If
@@ -1853,6 +1899,8 @@ BlITZ
 
     \deltaX=\x-\targetX
     \deltaY=\y-\targetY
+    \absDeltaX=Abs(\deltaX)
+    \absDeltaY=Abs(\deltaY)
 
     If (\bufDirection=0)
       dirX.b=0
@@ -1865,12 +1913,12 @@ BlITZ
 
       If \CPUMoveType=0
         If (\direction=1 OR \direction=3)
-          If (Abs(\deltaY)>Abs(\deltaX) AND Abs(\deltaY)>#distanceCPU)
+          If (\absDeltaY>\absDeltaX AND \absDeltaY>#distanceCPU)
             changeDirection=-1
           End If
         End If
         If (\direction=0 OR \direction=2)
-          If (Abs(\deltaX)>Abs(\deltaY) AND Abs(\deltaX)>#distanceCPU)
+          If (\absDeltaX>\absDeltaY AND \absDeltaX>#distanceCPU)
             changeDirection=-1
           End If
         End If
@@ -1925,13 +1973,13 @@ BlITZ
     End If
     allowMove.b=0
     If \CPUMoveType=0
-      If ((Abs(\deltaY)>#distanceCPU) OR (Abs(\deltaY)>#distanceCPU))
+      If (\absDeltaY>#distanceCPU OR \absDeltaY>#distanceCPU)
         allowMove=-1
       End If
     End If
     If (allowMove=0)
       ;evaluate si change mode to avoid
-      If Abs(\deltaX)>#tooFarCPU OR Abs(\deltaY)>#tooFarCPU ; if too far go closer
+      If \absDeltaX>#tooFarCPU OR \absDeltaY>#tooFarCPU ; if too far go closer
         \CPUMoveType=0
         ;\CPUBufferMoveType=#CPUBufferMoveTypeInit
         allowMove=-1

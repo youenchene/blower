@@ -34,7 +34,6 @@ WBStartup
 CloseWorkBench_
 
 cfree1.l=ChipFree
-ffree1.l=FastFree
 
 DEFTYPE .w
 Amiga
@@ -658,19 +657,15 @@ End Statement
   Buffer 0,16384
   Buffer 1,16384
 
+
+  cfree2.l=ChipFree
+  cfree.l=(cfree1-cfree2)/1024
+  
   VWAIT 100
   BLITZ
-  cfree2.l=ChipFree
-  ffree2.l=FastFree
-  cfree.l=(cfree1-cfree2)/1024
-  ffree.l=(ffree1-ffree2)/1024
-  ;STOP
   Use Bitmap 7
-  PrintText{"Memory footprint Chip:"+str$(cfree)+" Fast:"+str$(ffree),10,142}
+  PrintText{"Memory footprint Chip:"+str$(cfree),10,142}
   PrintText{"Remaining Chip:"+str$(cfree2),10,148}
-  If #Debug 
-    MouseWait
-  End If
   
 
   Use Bitmap 7
@@ -1162,7 +1157,7 @@ BlITZ
     ;remove
     If \removed>0
       tile.b=levels(currentLevel)\map[(\x LSR 4)+(\y LSR 4)*#mapWidth]
-      Blit tile+currentWorld*10,\x,\y,4
+      Blit tile+currentWorld*10,\x,\y,4 ;Block doesn't support excess
       \removed=\removed-1
       If \removed=0
         KillItem bonus()
@@ -1615,8 +1610,8 @@ BlITZ
           End If
         End If
       End If
-      a=\avatar*50+51+\direction*10+\animIndex
     End If
+    a=\avatar*50+51+\direction*10+\animIndex
     ;draw bobs
     If (\x<16):\x=16:EndIf
     If (\x>288):\x=288:EndIf

@@ -54,9 +54,7 @@ Amiga
 #stepSizeBoost=6
 #maxEnergy=15
 #bufferDirection=8
-#bufferDirectionWall=120
-
-
+#bufferDirectionWall=8
 
 #ShapeIndexHUDAvatar=36
 #ShapeIndexHUDPlayer=27
@@ -394,6 +392,7 @@ End Statement
   Locate 0,14
   loadTextY.w=14*8
   Colour 3,0
+
 .LoadMusic:
   LoadBank 0,"assets/zik/SunsetRebels-Amiga.mod",2
   addrMod.l=Bank(0)
@@ -422,13 +421,13 @@ End Statement
   Use Bitmap 7
   VWAIT 100
   Blitz
-  PrintText{"Loading Music : Sunset Rebels by Roald Strauss",10,94}
+  PrintText{"Music : Sunset Rebels by Roald Strauss",10,94}
+  PrintText{"Grafx enhanced by TheoTheoderich",10,100}
+  PrintText{"Loading game...",10,106}
 
-.LoadTiles:
-  Use Bitmap 7
-  PrintText{"Loading Worlds...",10,100}
   QAMIGA
 
+.LoadTiles:
   Bitmap 4, 32, 32, 4 ;World
   LoadBitMap 4, "assets/world1.iff"
   ; Load Tile
@@ -471,11 +470,6 @@ End Statement
   Free Bitmap 4
 
 .LoadBobs:
-  Use Bitmap 7
-  VWAIT 100
-  Blitz
-  PrintText{"Loading Sprites and Bobs...",10,106}
-  QAMIGA
 
   LoadBitMap 9, "assets/bobs.iff"
 
@@ -569,11 +563,6 @@ End Statement
 
 .LoadHUD:
   ; HUD
-  Use Bitmap 7
-  VWAIT 100
-  Blitz
-  PrintText{"Initiating HUD...",10,118}
-  QAMIGA
 
 
 
@@ -589,13 +578,6 @@ End Statement
   Free Bitmap 6
 
   ; Palette
-  Use Bitmap 7
-  VWAIT 100
-  Blitz
-  PrintText{"Initiating Palette...",10,124}
-  QAMIGA
-
-
   InitPalette 0,32
   InitPalette 1,32
   LoadPalette 1, "assets/bobs.iff"
@@ -608,13 +590,6 @@ End Statement
 
 
 .LoadSoundEffects:
-  Use Bitmap 7
-  VWAIT 100
-  Blitz
-  PrintText{"Loading Sound Effects...",10,130}
-  QAMIGA
-
-
   LoadSound 0,"assets/snd/gun1amp.iff"
   DEFTYPE .sfx gun2ampB
   LoadSound 1,"assets/snd/gun2amp.iff"
@@ -628,14 +603,6 @@ End Statement
   LoadSound 8,"assets/snd/step-road.iff"
 
 .LoadTitleScreen:
-  Use Bitmap 7
-  VWAIT 100
-  Blitz
-  PrintText{"Loading Title Screen...",10,136}
-
- 
-  QAMIGA
-
   Bitmap 8, 320, 128, 5
   LoadBitMap 8, "assets/title.iff"
   
@@ -665,7 +632,7 @@ End Statement
   ;cfree2.l=ChipFree
   ;cfree.l=(cfree1-cfree2)/1024
 
-  ;$VWAIT 100
+  VWAIT 100
   BLITZ
   ;Use Bitmap 7
   ;PrintText{"Memory footprint Chip:"+str$(cfree),10,142}
@@ -1306,9 +1273,7 @@ BlITZ
               End If 
             End If
           Else ; or cpu move
-            ;STOP
             If (currentCPU=cursorCPU) and db=0; only one CPU move recalculation by frame (performance issue)
-              ;STOP
               Gosub CPUMove
               \previousVJoyx=vJoyx
               \previousVJoyy=vJoyy
@@ -1327,28 +1292,35 @@ BlITZ
               ; next move
               next_x.w=\x
               next_y.w=\y
-
+              allowMoveA.b=0
+              allowMoveB.b=0
+              nextTileA.b=0
+              nextTileB.b=0
               ;Wall Collision
               If (\direction=1)
-                pa.w=Point(next_x+16,next_y+1)
-                pb.w=Point(next_x+16,next_y+14)
+                nextTileA.b=levels(currentLevel)\map[((next_x+16) LSR 4)+((next_y+1) LSR 4)*#mapWidth]
+                nextTileB.b=levels(currentLevel)\map[((next_x+16) LSR 4)+((next_y+14) LSR 4)*#mapWidth]
               End If
               If (\direction=3)
-                pa.w=Point(next_x-1,next_y+1)
-                pb.w=Point(next_x-1,next_y+14)
+                nextTileA.b=levels(currentLevel)\map[((next_x-1) LSR 4)+((next_y+1) LSR 4)*#mapWidth]
+                nextTileB.b=levels(currentLevel)\map[((next_x-1) LSR 4)+((next_y+14) LSR 4)*#mapWidth]
               End If
               If (\direction=0)
-                pa.w=Point(next_x+3,next_y-1)
-                pb.w=Point(next_x+12,next_y-1)
+                nextTileA.b=levels(currentLevel)\map[((next_x+3) LSR 4)+((next_y-1) LSR 4)*#mapWidth]
+                nextTileB.b=levels(currentLevel)\map[((next_x+12) LSR 4)+((next_y-1) LSR 4)*#mapWidth]
               End If
               If (\direction=2)
-                pa.w=Point(next_x+3,next_y+16)
-                pb.w=Point(next_x+12,next_y+16)
+                nextTileA.b=levels(currentLevel)\map[((next_x+3) LSR 4)+((next_y+16) LSR 4)*#mapWidth]
+                nextTileB.b=levels(currentLevel)\map[((next_x+12) LSR 4)+((next_y+16) LSR 4)*#mapWidth]
               End If
 
-              ;check colors in front of avatar
-              paValid.b=(pa < #wallColor1 OR pa > #wallColor2)
-              pbValid.b=(pb < #wallColor1 OR pb > #wallColor2)
+              If nextTileA=1 OR nextTileA=3
+                allowMoveA=-1
+              End If
+
+              If nextTileB=1 OR nextTileB=3
+                allowMoveB=-1
+              End If
 
               ; CPU behavior on wall it
               If currentJoy<0
@@ -1357,25 +1329,26 @@ BlITZ
                   If (nextCurrentCPU=nbCPU)
                     nextCurrentCPU=0
                   End If
-                  If (paValid=0 AND pbValid=0)
+                  If (allowMoveA=0 AND allowMoveB=0)
                     nbDir.b=0
                     d1.b=-1
                     d2.b=-1
                     d3.b=-1
-                    For d.b=0 to (nbPlayer-1)
+                    For d.b=0 to 3
                       If (d<>\direction)
-                        pw.b=-2
+                        tilew.b
                         Select d
                           Case 0
-                            pw=Point(next_x+8,next_y-12)
+                            tilew=levels(currentLevel)\map[((next_x+8) LSR 4)+((next_y-8) LSR 4)*#mapWidth]
                           Case 1
-                            pw=Point(next_x+24,next_y+12)
+                            tilew=levels(currentLevel)\map[((next_x+24) LSR 4)+((next_y+8) LSR 4)*#mapWidth]
                           Case 2
-                            pw=Point(next_x+8,next_y+28)
+                            tilew=levels(currentLevel)\map[((next_x+8) LSR 4)+((next_y+24) LSR 4)*#mapWidth]
                           Case 3
-                            pw=Point(next_x-8,next_y+12)
+                            tilew=levels(currentLevel)\map[((next_x-8) LSR 4)+((next_y+8) LSR 4)*#mapWidth]
                         End Select
-                        cdir=(pw < #wallColor1 OR pw > #wallColor2)
+                        cdir.b=(tilew=1 OR tilew=3)
+                       ; STOP
                         If cdir
                           nbDir=nbDir+1
                           If (d1 = -1)
@@ -1389,33 +1362,40 @@ BlITZ
                           End If
                         End If
                       End If
-                    next
-                    If (nbDir=1)
-                      \direction=d1
-                    End If
-                    If (nbDir=2)
-                      c.b=Rnd(2);Random2Array(Random2Ind)
-                      ;UpdateIndexRandom2Array{nbDir}
-                      If (c=1)
-                        \direction=d2
-                      Else 
+                    Next
+                    STOP
+                    IF nbDir > 0
+                      If (nbDir=1)
                         \direction=d1
                       End If
-                    End If
-
-                    If (nbDir=3)
-                      c.b=Rnd(3);Random3Array(Random3Ind)
-                      ;UpdateIndexRandom3Array{c}
-                      Select c
-                        Case 1
+                      If (nbDir=2)
+                        c.b=Rnd(2);Random2Array(Random2Ind)
+                        ;UpdateIndexRandom2Array{nbDir}
+                        If (c=1)
                           \direction=d2
-                        Case 2 
+                        Else 
                           \direction=d1
-                        Default
-                          \direction=d3
-                      End Select
+                        End If
+                      End If
+
+                      If (nbDir=3)
+                        c.b=Rnd(3);Random3Array(Random3Ind)
+                        ;UpdateIndexRandom3Array{c}
+                        Select c
+                          Case 1
+                            \direction=d2
+                          Case 2 
+                            \direction=d1
+                          Default
+                            \direction=d3
+                        End Select
+                      End If
+
+
+                      \bufDirection=#bufferDirectionWall
                     End If
                     
+
 
                     ;If (\direction=1 OR \direction=3)
                     ;  If (\deltaY>0)
@@ -1433,13 +1413,14 @@ BlITZ
                     ;End If 
                     ;if (\direction > 3):\direction=0:End If
                     ;if (\direction < 0):\direction=3:End If
-                    \bufDirection=#bufferDirectionWall
+
                   End If
                 End If
               End If
 
+
               ;let's move
-              If (paValid=-1 AND pbValid=-1) ;Move
+              If (allowMoveA AND allowMoveB) ;Move
                 If (\direction=1 OR \direction=3)
                   \x=\x+vJoyx*\stepsize
                 End If
@@ -1447,14 +1428,14 @@ BlITZ
                   \y=\y+vJoyy*\stepsize
                 End If
               EndIf
-              If (paValid=-1 AND pbValid=0) ;Avoid obstacle
+              If (allowMoveA AND allowMoveB=0) ;Avoid obstacle
                 If (\direction=0 OR \direction=2)
                   \x=\x-1
                 Else
                   \y=\y-1
                 End If
               EndIf
-              If (paValid=0 AND pbValid=-1) ;Avoid obstacle
+              If (allowMoveA=0 AND allowMoveB) ;Avoid obstacle
                 if (\direction=0 OR \direction=2)
                   \x=\x+1
                 Else
@@ -1462,7 +1443,7 @@ BlITZ
                 End If
               End If
 
-              
+
               ;Animation
               \frameCounter=0
               If (\animIndex = 3)
@@ -1893,7 +1874,7 @@ BlITZ
   End If
   ;Check if dead
   If (\targetPlayer>=0)
-    If (player(\targetPlayer)\dead> 0)
+    If (player(\targetPlayer)\dead>0)
       \targetPlayer=-1
     End If
   End If
@@ -2168,11 +2149,6 @@ BlITZ
 
 QAMIGA 
 .LoadLevels:
-  Use Bitmap 7
-  VWAIT 100
-  Blitz
-  PrintText{"Loading Levels....",10,112}
-  QAMIGA
   dummy.b 
   For lev.b=0 to (#levelsCount-1)
     If ReadFile(0,"assets/level"+Str$(lev+1)+".dat") 

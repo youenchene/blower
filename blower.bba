@@ -56,11 +56,14 @@ Amiga
 #bufferDirection=8
 #bufferDirectionWall=8
 
-#ShapeIndexHUDAvatar=36
-#ShapeIndexHUDPlayer=27
-#ShapeIndexBullet=320
-#ShapeIndexBonus=335
-#ShapeIndexFlam=370
+#ShapeIndexHUDAvatar=32
+#ShapeIndexHUDPlayer=48
+#ShapeIndexBullet=276
+#ShapeIndexBonus=292
+#ShapeIndexFlam=192
+#ShapeIndexLetters=206
+#ShapeIndexAvatars=64
+#ShapeIndexTitleScreen=54
 
 #wallColor1=5
 #wallColor2=8
@@ -233,7 +236,7 @@ Statement PrintText{txt$,txtX.w,txtY.w}
       counter = counter + 1
   Next i
   For i.b = 0 To counter-1
-      Blit 250+display(i), txtX+(i*4), txtY
+      Blit #ShapeIndexLetters+display(i), txtX+(i*4), txtY
   Next i
 End Statement
 
@@ -414,7 +417,7 @@ End Statement
   LoadBitMap 8, "assets/font01.iff"
 
   for i.b=0 to 60
-    GetaShape 250+i,4*i,5,3,5
+    GetaShape #ShapeIndexLetters+i,4*i,5,3,5
   next
   Free Bitmap 8
 
@@ -432,30 +435,30 @@ End Statement
   LoadBitMap 4, "assets/world1.iff"
   ; Load Tile
   Use Bitmap 4
-  GetaShape 1,0,0,16,16
-  GetaShape 3,0,16,16,16
-  GetaShape 2,16,0,16,16
-  GetaShape 4,16,16,16,16
+  GetaShape 0,0,0,16,16
+  GetaShape 2,0,16,16,16
+  GetaShape 1,16,0,16,16
+  GetaShape 3,16,16,16,16
   Free Bitmap 4
 
   Bitmap 4, 32, 32, 4 ;World
   LoadBitMap 4, "assets/world2.iff"
   ; Load Tile
   Use Bitmap 4
-  GetaShape 11,0,0,16,16
-  GetaShape 12,16,0,16,16
-  GetaShape 14,16,16,16,16
-  GetaShape 13,0,16,16,16
+  GetaShape 8,0,0,16,16
+  GetaShape 9,16,0,16,16
+  GetaShape 11,16,16,16,16
+  GetaShape 10,0,16,16,16
 
 
   Bitmap 4, 32, 32, 4 ;World
   LoadBitMap 4, "assets/world3.iff"
   ; Load Tile
   Use Bitmap 4
-  GetaShape 21,0,0,16,16
-  GetaShape 23,0,16,16,16
-  GetaShape 22,16,0,16,16
-  GetaShape 24,16,16,16,16
+  GetaShape 16,0,0,16,16
+  GetaShape 18,0,16,16,16
+  GetaShape 17,16,0,16,16
+  GetaShape 19,16,16,16,16
   Free Bitmap 4
 
 
@@ -463,10 +466,10 @@ End Statement
   LoadBitMap 4, "assets/world4.iff"
   ; Load Tile
   Use Bitmap 4
-  GetaShape 31,0,0,16,16
-  GetaShape 33,0,16,16,16
-  GetaShape 32,16,0,16,16
-  GetaShape 34,16,16,16,16
+  GetaShape 24,0,0,16,16
+  GetaShape 26,0,16,16,16
+  GetaShape 25,16,0,16,16
+  GetaShape 27,16,16,16,16
   Free Bitmap 4
 
 .LoadBobs:
@@ -478,57 +481,59 @@ End Statement
   ;1-4 : walk animation
   Use Bitmap 9
   for j.b=0 to 3
-    avatarIndex.w=j*50
-    yIndex.w=j*64
+    avatarIndex.w=j LSL 5
+    yIndex.w=j LSL 6
     ;top anim
-    GetaShape avatarIndex+50,64,yIndex+32,16,16 ;shot
+    GetaShape avatarIndex+#ShapeIndexAvatars,64,yIndex+32,16,16 ;shot
     for i.b=0 to 3
-      GetaShape avatarIndex+51+i,16*i,yIndex+32,16,16 ;walk
+      GetaShape avatarIndex+#ShapeIndexAvatars+1+i,16*i,yIndex+32,16,16 ;walk
     next
 
     ;right anim
-    GetaShape avatarIndex+60,64,yIndex+0,16,16 ;shot
+    GetaShape avatarIndex+#ShapeIndexAvatars+8,64,yIndex+0,16,16 ;shot
     for i.b=0 to 3
-      GetaShape avatarIndex+61+i,16*i,yIndex+0,16,16 ;walk
+      GetaShape avatarIndex+#ShapeIndexAvatars+8+1+i,16*i,yIndex+0,16,16 ;walk
     next
 
     ;bottom anim
-    GetaShape avatarIndex+70,64,yIndex+16,16,16 ;shot
+    GetaShape avatarIndex+#ShapeIndexAvatars+16,64,yIndex+16,16,16 ;shot
     for i.b=0 to 3
-      GetaShape avatarIndex+71+i,16*i,yIndex+16,16,16 ;walk
+      GetaShape avatarIndex+#ShapeIndexAvatars+16+1+i,16*i,yIndex+16,16,16 ;walk
     next
 
     ;left anim
     for i.b=0 to 4
-      CopyShape avatarIndex+60+i,avatarIndex+80+i:XFlip avatarIndex+80+i
+      CopyShape avatarIndex+#ShapeIndexAvatars+8+i,avatarIndex+#ShapeIndexAvatars+24+i
+      XFlip avatarIndex+#ShapeIndexAvatars+24+i
     next
 
     ;dead
-    GetaShape avatarIndex+90,0,yIndex+48,32,16 ;shot
+    GetaShape avatarIndex+#ShapeIndexAvatars+7,0,yIndex+48,32,16 ;shot
+
   next
 
   ; Bullet Sprite
   ;up & down
-  GetaShape #ShapeIndexBullet+7,24,308,7,4
-  CopyShape #ShapeIndexBullet+7,#ShapeIndexBullet+1
+  GetaShape #ShapeIndexBullet+8,24,308,7,4
+  CopyShape #ShapeIndexBullet+8,#ShapeIndexBullet
+  YFlip #ShapeIndexBullet
+  GetaShape #ShapeIndexBullet+9,35,304,2,4
+  CopyShape #ShapeIndexBullet+9,#ShapeIndexBullet+1
   YFlip #ShapeIndexBullet+1
-  GetaShape #ShapeIndexBullet+8,35,304,2,4
-  CopyShape #ShapeIndexBullet+8,#ShapeIndexBullet+2
+  GetaShape #ShapeIndexBullet+10,40,306,6,7
+  CopyShape #ShapeIndexBullet+10,#ShapeIndexBullet+2
   YFlip #ShapeIndexBullet+2
-  GetaShape #ShapeIndexBullet+9,40,306,6,7
-  CopyShape #ShapeIndexBullet+9,#ShapeIndexBullet+3
-  YFlip #ShapeIndexBullet+3
 
   ;right & left
   GetaShape #ShapeIndexBullet+4,0,4,4,7
-  CopyShape #ShapeIndexBullet+4,#ShapeIndexBullet+10
-  XFlip #ShapeIndexBullet+10
-  GetaShape #ShapeIndexBullet+5,10,307,4,2
-  CopyShape #ShapeIndexBullet+5,#ShapeIndexBullet+11
-  XFlip #ShapeIndexBullet+11
-  GetaShape #ShapeIndexBullet+6,17,305,7,6
-  CopyShape #ShapeIndexBullet+6,#ShapeIndexBullet+12
+  CopyShape #ShapeIndexBullet+4,#ShapeIndexBullet+12
   XFlip #ShapeIndexBullet+12
+  GetaShape #ShapeIndexBullet+5,10,307,4,2
+  CopyShape #ShapeIndexBullet+5,#ShapeIndexBullet+13
+  XFlip #ShapeIndexBullet+13
+  GetaShape #ShapeIndexBullet+6,17,305,7,6
+  CopyShape #ShapeIndexBullet+6,#ShapeIndexBullet+14
+  XFlip #ShapeIndexBullet+14
 
   ;Bonus
   For i.b=0 to 4
@@ -572,9 +577,9 @@ End Statement
     for j.b=0 to 2
       GetaShape #ShapeIndexHUDAvatar+i+j*4,i*16,j*16,16,16
     Next
-    GetaShape #ShapeIndexHUDPlayer+i,i*16,49,16,16
+    GetaShape #ShapeIndexHUDPlayer+1+i,i*16,49,16,16
   next
-  GetaShape #ShapeIndexHUDPlayer-1,0,65,16,16 ; cpu
+  GetaShape #ShapeIndexHUDPlayer,0,65,16,16 ; cpu
   Free Bitmap 6
 
   ; Palette
@@ -608,17 +613,17 @@ End Statement
   
   Bitmap 9, 49, 9, 5
   LoadBitMap 9, "assets/title_elements.iff"
-  GetaShape 16,0,0,3,5 ; cursor white
-  GetaShape 17,4,0,3,5 ; cursor other
-  GetaShape 18,8,0,41,9 ; frame
+  GetaShape #ShapeIndexTitleScreen,0,0,3,5 ; cursor white
+  GetaShape #ShapeIndexTitleScreen+1,4,0,3,5 ; cursor other
+  GetaShape #ShapeIndexTitleScreen+2,8,0,41,9 ; frame
 
   Free Bitmap 9
 
   Bitmap 9, 105, 83, 5
   LoadBitMap 9, "assets/title_neon.iff"
-  GetaShape 6,0,0,105,31 ; fire back
-  GetaShape 7,0,32,101,24 ; text neon 1
-  GetaShape 8,0,58,101,24 ; text neon 2
+  GetaShape #ShapeIndexTitleScreen+3,0,0,105,31 ; fire back
+  GetaShape #ShapeIndexTitleScreen+4,0,32,101,24 ; text neon 1
+  GetaShape #ShapeIndexTitleScreen+5,0,58,101,24 ; text neon 2
 
   Free Bitmap 9
 
@@ -671,8 +676,8 @@ End Statement
 
   Use BitMap 8
 
-  Blit 6,107,5 
-  Blit 8,108,9 
+  Blit #ShapeIndexTitleScreen+3,107,5 
+  Blit #ShapeIndexTitleScreen+5,108,9 
 
   Use BitMap 9
   Cls 0
@@ -734,7 +739,7 @@ End Statement
       titleBuffer=titleBuffer-1
     Else
       Use BitMap 8
-      Blit 7+titleNeon,108,9 
+      Blit #ShapeIndexTitleScreen+4+titleNeon,108,9 
       titleNeon=1-titleNeon
       titleBuffer=Rnd(100)
       Use BitMap 9
@@ -829,15 +834,15 @@ End Statement
     ;Update Display
     paddingX.w=0
     If (mi=1):paddingX=menuXPadding*(playerCursor+1):End If
-    BBlit 0,16+cursorB,menuX-6+paddingX,menuY(mi)
-    BBlit 0,18,menuX+menuXPadding*(chosenMode+1)-4,menuY(2)-2
-    BBlit 0,18,menuX+menuXPadding*(chosenWorld+2)-4,menuY(3)-2
+    BBlit 0,#ShapeIndexTitleScreen+cursorB,menuX-6+paddingX,menuY(mi)
+    BBlit 0,#ShapeIndexTitleScreen+2,menuX+menuXPadding*(chosenMode+1)-4,menuY(2)-2
+    BBlit 0,#ShapeIndexTitleScreen+2,menuX+menuXPadding*(chosenWorld+2)-4,menuY(3)-2
     For i.b=0 to 3
       cjoy.b=chosenPlayer(i)
       If (cjoy >= 0 and cjoy < 2)
         cjoy=1-cjoy ; invert because of port 2 as joy port on amiga
       EndIf
-      BBlit  0,#ShapeIndexHUDPlayer+cjoy,menuX+menuXPadding*(i+1)+8,menuY(1)
+      BBlit  0,#ShapeIndexHUDPlayer+1+cjoy,menuX+menuXPadding*(i+1)+8,menuY(1)
     Next
   Until (RawStatus($45))
 
@@ -938,9 +943,9 @@ End Statement
       If cjoy = -1
         nbCPU=nbCPU+1
       End If
-      Block #ShapeIndexHUDPlayer+cjoy,avatar*64,0
-      Block #ShapeIndexHUDAvatar+avatar,16+avatar*64,0
-      Boxf 32+avatar*64,15-player(i)\energy,48+avatar*64,15,30
+      Block #ShapeIndexHUDPlayer+1+cjoy,avatar LSL 6,0
+      Block #ShapeIndexHUDAvatar+avatar,16+avatar LSL 6,0
+      Boxf 32+avatar LSL 6,15-player(i)\energy,48+avatar LSL 6,15,30
     next
 
     PrintText{"Level: "+str$(currentLevel+1),256,9}
@@ -1037,7 +1042,7 @@ BlITZ
   For x.b=0 to (#mapWidth-1)
       For y.b=0 to (#mapHeight-1)
         tile.b=levels(currentLevel)\map[x+y*#mapWidth]
-        Block tile+currentWorld*10,x*16,y*16 ; only amiga mlode?
+        Block tile-1+currentWorld LSL 3,x LSL 4,y LSL 4
       Next
   Next
   CopyBitMap 0,1 ; for double buffering
@@ -1073,7 +1078,7 @@ BlITZ
   For i.b=0 to (nbPlayer-1)
     UsePath player(i)
     If (\dead>=2)
-      a.w=50+\avatar*50+40
+      a.w=#ShapeIndexAvatars+\avatar LSL 5+7
       Blit a,\x,\y 
       \dead=\dead-1
       If (\dead=2)
@@ -1136,7 +1141,7 @@ BlITZ
     ;remove
     If \removed>0
       tile.b=levels(currentLevel)\map[(\x LSR 4)+(\y LSR 4)*#mapWidth]
-      Blit tile+currentWorld*10,\x,\y,4 ;Block doesn't support excess
+      Blit tile-1+currentWorld LSL 3,\x,\y,4 ;Block doesn't support excess
       \removed=\removed-1
       If \removed=0
         KillItem bonus()
@@ -1164,11 +1169,11 @@ BlITZ
       If (\dead>0 OR \shot>0)
         ;Has been shoted anim
         If (\shot>0)
-          a=50+\avatar*50+\direction*10
+          a=#ShapeIndexAvatars+\avatar LSL 5+\direction LSL 3
           \shot=\shot-1
         Else
           If (\dead=2)
-            a=50+\avatar*50+40
+            a=#ShapeIndexAvatars+\avatar LSL 5+7
             \dead=\dead-1
             \x=\x-8
             If (\x>272):\x=272:EndIf
@@ -1198,11 +1203,12 @@ BlITZ
         buttonOn.b=0
 
         If (currentJoy >= 0  AND currentJoy < 4)
-          ;Get Joy Button
-          buttonOn=MJoyb{currentJoy}
           ; Buffer Joy Button to avoid 2 bullet at the same time 
           If (\waitBullet>0)
             \waitBullet=\waitBullet-1
+          Else 
+            ;Get Joy Button
+            buttonOn=MJoyb{currentJoy}
           EndIf
         Else ;CPU alternatemove to Shoot and shoot
 
@@ -1256,8 +1262,11 @@ BlITZ
           vJoyy.b=0
           If (currentJoy >= 0  AND currentJoy < 4) ; player move
             ;==== Player
+            vJoyy.b=0
             vJoyx.b=MJoyx{currentJoy}
-            vJoyy.b=MJoyy{currentJoy}
+            If vJoyx=0
+             vJoyy=MJoyy{currentJoy}
+            End If
             If (vJoyx <> 0 OR vJoyy <> 0)
               If vJoyx=1
                 \direction=1
@@ -1322,6 +1331,8 @@ BlITZ
                 allowMoveB=-1
               End If
 
+              MOVE.w #$fff,$dff180 ; white 
+
               ; CPU behavior on wall it
               If currentJoy<0
                 If (currentCPU=cursorCPU) and db=1 ; only one CPu by frame on behavior
@@ -1363,7 +1374,7 @@ BlITZ
                         End If
                       End If
                     Next
-                    STOP
+                    ;leosaSTOP
                     IF nbDir > 0
                       If (nbDir=1)
                         \direction=d1
@@ -1396,7 +1407,6 @@ BlITZ
                     End If
                     
 
-
                     ;If (\direction=1 OR \direction=3)
                     ;  If (\deltaY>0)
                     ;    \direction=\direction-1
@@ -1418,14 +1428,24 @@ BlITZ
                 End If
               End If
 
-
+             MOVE.w #$000,$dff180 ; black 
               ;let's move
               If (allowMoveA AND allowMoveB) ;Move
                 If (\direction=1 OR \direction=3)
-                  \x=\x+vJoyx*\stepsize
+                  If (vJoyx>0)
+                    \x=\x+\stepsize
+                  End If
+                  If (vJoyx<0)
+                    \x=\x-\stepsize
+                  End If
                 End If
                 If (\direction=0 OR \direction=2)
-                  \y=\y+vJoyy*\stepsize
+                  If (vJoyy>0)
+                    \y=\y+\stepsize
+                  End If
+                  If (vJoyy<0)
+                    \y=\y-\stepsize
+                  End If
                 End If
               EndIf
               If (allowMoveA AND allowMoveB=0) ;Avoid obstacle
@@ -1562,7 +1582,7 @@ BlITZ
                   player(p)\previousEnergy=player(p)\energy
                   player(p)\energy=player(p)\energy-\bulletImpact
                   ;player(p)\shot=#shotAnim ;player can still move
-                  a=50+\avatar*50+\direction*10
+                  a=#ShapeIndexAvatars+\avatar LSL 5+\direction LSL 3
                   If (player(p)\energy <= 0)
                         player(p)\dead=3
                   EndIf
@@ -1599,6 +1619,7 @@ BlITZ
                     bullets()\channel=2-\bullets
                     bullets()\srcAvatar=\avatar
                     bullets()\bulletImpact=\bulletImpact
+                    MOVE.w #$fff,$dff180 ; white
                     if (currentJoy=-1)
                       \waitBullet=#waitBulletCPU
                       ; if shoot then move
@@ -1625,7 +1646,8 @@ BlITZ
             End If
           End If
         End If
-        a=\avatar*50+51+\direction*10+\animIndex
+        MOVE.w #$000,$dff180 ; black
+        a=#ShapeIndexAvatars+1+\avatar LSL 5+\direction LSL 3+\animIndex
       End If
       
       ;draw bobs
@@ -1634,7 +1656,7 @@ BlITZ
       If (\y<16):\y=16:EndIf
       If (\y>192):\y=192:EndIf
       If a=0
-         a=\avatar*50+51+\direction*10+\animIndex
+         a=#ShapeIndexAvatars+1+\avatar LSL 5+\direction LSL 3+\animIndex
       End If 
       If (\invincible=0)
         BBlit db,a,\x,\y 
@@ -1665,28 +1687,31 @@ BlITZ
         \init=\init-1
         \animIndex=0
       Else
-        If (\direction=0)
-          \y=\y-\speed   
-          dot.b=Point(\x2,\y-1)
-        EndIf
-        If (\direction=1)
-          \x=\x+\speed 
-          dot.b=Point(\x+6,\y2)
-        EndIf
-        If (\direction=2)
-           \y=\y+\speed   
-           dot.b=Point(\x2,\y+6)  
-        EndIf
-        If (\direction=3)
-           \x=\x-\speed 
-           dot.b=Point(\x-1,\y2)
-        EndIf
-        \animIndex=1
-        bound.b=0
+         bound.b=0
         If (\x<16):\x=16:bound=-1:EndIf
         If (\y<16):\y=16:bound=-1:EndIf
         If (\x>304):\x=295:bound=-1:EndIf
         If (\y>208):\y=200:bound=-1:EndIf
+        If bound=0
+          If (\direction=0)
+            \y=\y-\speed   
+            dot.b=Point(\x2,\y-1)
+          EndIf
+          If (\direction=1)
+            \x=\x+\speed 
+            dot.b=Point(\x+6,\y2)
+          EndIf
+          If (\direction=2)
+            \y=\y+\speed   
+            dot.b=Point(\x2,\y+6)  
+          EndIf
+          If (\direction=3)
+            \x=\x-\speed 
+            dot.b=Point(\x-1,\y2)
+          EndIf
+        End If
+        \animIndex=1
+
         ;Collision with wall
         If ((dot>=#wallColor1 AND dot<=#wallColor2) OR bound.b=-1)
          bullets()\endLife=#endAnimCount
@@ -1757,10 +1782,10 @@ BlITZ
     ;Display
     If \animIndex=1
       If db=0
-        BBlit db,#ShapeIndexBullet+1+\direction*3+\animIndex,xb,yb
+        BBlit db,#ShapeIndexBullet+\direction LSL 2+\animIndex,xb,yb
       End If
     Else
-      BBlit db,#ShapeIndexBullet+1+\direction*3+\animIndex,xb,yb
+      BBlit db,#ShapeIndexBullet+\direction LSL 2+\animIndex,xb,yb
     End If
     If (\endLife=0)
       player(\player)\bullets=player(\player)\bullets+1
@@ -1826,11 +1851,11 @@ BlITZ
         If (\energy < 4)
           ahud=2
         EndIf   
-        Block #ShapeIndexHUDAvatar+ahud*4+\avatar,16+\avatar*64,0
+        Block #ShapeIndexHUDAvatar+ahud LSL 2+\avatar,16+\avatar LSL 6,0
         If \previousEnergy>\energy
-          Boxf 32+\avatar*64,0,48+\avatar*64,15-\energy,0
+          Boxf 32+\avatar LSL 6,0,48+\avatar LSL 6,15-\energy,0
         Else
-          Boxf 32+\avatar*64,15-\energy,48+\avatar*64,15,30 
+          Boxf 32+\avatar LSL 6,15-\energy,48+\avatar LSL 6,15,30 
         End If
         \previousEnergy=\energy
       End If
@@ -2036,13 +2061,13 @@ BlITZ
       Block #ShapeIndexHUDAvatar+i,16+48,0
       PrintText{"Player "+str$(i+1)+" WON!",48+42,6}
       Use Bitmap 1-db
-      a.w=\avatar*50+51+\direction*10+\animIndex
+      a.w=#ShapeIndexAvatars+1+\avatar LSL 5+\direction LSL 3+\animIndex
       Blit a,\x,\y 
       \score=\score+1
       winner=i
     Else
       Use Bitmap 1-db
-      a.w=\avatar*50+90
+      a.w=\avatar LSL 5+#ShapeIndexAvatars+7
       Blit a,\x,\y 
     End If
   Next

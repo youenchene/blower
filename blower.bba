@@ -1331,7 +1331,6 @@ BlITZ
                 allowMoveB=-1
               End If
 
-              MOVE.w #$fff,$dff180 ; white 
 
               ; CPU behavior on wall it
               If currentJoy<0
@@ -1374,7 +1373,7 @@ BlITZ
                         End If
                       End If
                     Next
-                    ;leosaSTOP
+                    ;STOP
                     IF nbDir > 0
                       If (nbDir=1)
                         \direction=d1
@@ -1804,7 +1803,8 @@ BlITZ
       bonusTimerBuffer=bonusTimer(bonusCounter)
       bx.w=1+Rnd(#mapWidth-2)
       by.w=1+Rnd(#mapHeight-2)
-      If (levels(currentLevel)\map[bx+by*#mapWidth]<2)
+      tile.b=levels(currentLevel)\map[bx+by*#mapWidth]
+      If (tile=1 OR tile=3)
         If AddItem(bonus())
           bonus()\shapeIndex=Rnd(7) ;Random7Array(Random7Ind)
           ;UpdateIndexRandom7Array{timingUpdate}

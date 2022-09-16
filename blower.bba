@@ -236,7 +236,7 @@ Statement PrintText{txt$,txtX.w,txtY.w}
       counter = counter + 1
   Next i
   For i.b = 0 To counter-1
-      Blit #ShapeIndexLetters+display(i), txtX+(i*4), txtY
+      Blit #ShapeIndexLetters+display(i), txtX+(i LSL 2), txtY
   Next i
 End Statement
 
@@ -1499,7 +1499,7 @@ BlITZ
               Case 0
               ;display
                 For f.b=0 to 2
-                  fy.w=\y-16*(f+1)
+                  fy.w=\y-(f+1) LSL 4
                   If (fy>0 AND fy<208)
                     BBlit db,#ShapeIndexFlam+f,\x,fy
                   End If
@@ -1519,7 +1519,7 @@ BlITZ
                 Next
               Case 1
                 For f.b=0 to 2
-                  fx=\x+16*(f+1)
+                  fx=\x+(f+1) LSL 4
                   If (fx>0 AND fx<304)
                     BBlit db,#ShapeIndexFlam+3+f,fx,\y
                   End if
@@ -1538,7 +1538,7 @@ BlITZ
                 Next
               Case 2
                 For f.b=0 to 2
-                  fy.w=\y+16*(f+1)
+                  fy.w=\y+(f+1) LSL 4
                   If (fy>0 AND fy<208)
                     BBlit db,#ShapeIndexFlam+6+f,\x,fy
                   End If
@@ -1557,7 +1557,7 @@ BlITZ
                 Next
               Case 3
                 For f.b=0 to 2
-                  fx=\x-16*(f+1)
+                  fx=\x-(f+1) LSL 4
                   If (fx>0 AND fx<304)
                     BBlit db,#ShapeIndexFlam+9+f,fx,\y
                   End If
@@ -1808,8 +1808,8 @@ BlITZ
         If AddItem(bonus())
           bonus()\shapeIndex=Rnd(7) ;Random7Array(Random7Ind)
           ;UpdateIndexRandom7Array{timingUpdate}
-          bonus()\x=bx*16
-          bonus()\y=by*16
+          bonus()\x=bx LSL 4
+          bonus()\y=by LSL 4
           bonus()\displayed=2
           bonus()\removed=-1
         End If
@@ -1818,13 +1818,21 @@ BlITZ
         ;UpdateIndexRandom2Array{px}
         py.b=Rnd(2);Random2Array(Random2Ind)
         ;UpdateIndexRandom2Array{px}
-        bx=1+px*(#mapWidth-3)
-        by=1+py*(#mapHeight-3)
+        If (px=0)
+          bx=1
+        Else
+          bx=#mapWidth-2
+        End If
+        If (py=0)
+          by=1
+        Else
+          yx=#mapHeight-2
+        End If
         If AddItem(bonus())
           bonus()\shapeIndex=Rnd(7) ;Random7Array(Random7Ind)
           ;UpdateIndexRandom7Array{px}
-          bonus()\x=bx*16
-          bonus()\y=by*16
+          bonus()\x=bx LSL 4
+          bonus()\y=by LSL 4
           bonus()\displayed=2
           bonus()\removed=-1
         End If
@@ -2096,8 +2104,8 @@ BlITZ
   Cls 0
   For p.b=0 to (nbPlayer-1)
     UsePath player(p)
-    Block #ShapeIndexHUDAvatar+\avatar,\avatar*32,0
-    PrintText{str$(\score),19+\avatar*32,6}
+    Block #ShapeIndexHUDAvatar+\avatar,\avatar LSL 5,0
+    PrintText{str$(\score),19+\avatar LSL 5,6}
   Next
   Repeat
     vwait
@@ -2143,14 +2151,14 @@ BlITZ
   ResetList listPlayer()
   i.b=0
   While NextItem(listPlayer())
-    PrintText{str$(i+1)+".",112,32+6+i*32}
+    PrintText{str$(i+1)+".",112,32+6+i LSL 4}
     cjoy.b=player(\pindex)\joy
     If (cjoy >= 0 and cjoy < 2)
       cjoy=1-cjoy ; invert because of port 2 as joy port on amiga
     EndIf
-    Block #ShapeIndexHUDAvatar+\pindex,128,128-i*32
-    Block #ShapeIndexHUDPlayer+cjoy,160,128-i*32
-    PrintText{"- "+str$(\score),182,128+6-i*32}
+    Block #ShapeIndexHUDAvatar+\pindex,128,128-i LSL 4
+    Block #ShapeIndexHUDPlayer+cjoy,160,128-i LSL 4
+    PrintText{"- "+str$(\score),182,128+6-i LSL 4}
     i=i+1;
   Wend
   DisplayBitMap 1,0

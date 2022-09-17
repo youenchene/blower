@@ -88,31 +88,6 @@ energyBulletImpact.b=#energyBulletImpactNormal
 #distanceCPU=9
 #tooFarCPU=72
 
-
-;#RandomArraySize=25
-;#RandomArraySizeFor=24
-;Random2Ind.b=0
-;Random3Ind.b=0
-;Random7Ind.b=0
-
-;Dim Random2Array.b(#RandomArraySize)
-;For r.b=0 to #RandomArraySizeFor
-;   Random2Array(r)=Rnd(2) 
-;Next
-
-
-;Dim Random3Array.b(#RandomArraySize)
-;For r.b=0 to #RandomArraySizeFor
-;   Random3Array(r)=Rnd(3) 
-;Next
-
-
-;Dim Random7Array.b(#RandomArraySize)
-;For r.b=0 to #RandomArraySizeFor
-;   Random7Array(r)=Rnd(7) 
-;Next
-
-
 chosenWorld.b=-1
 chosenMode.b=0
 
@@ -128,13 +103,34 @@ chosenPlayer(2)=-1
 chosenPlayer(3)=-1
 
 
-Dim bonusTimer(5)
+Dim bonusTimer.b(5)
 bonusTimer(0)=15
 bonusTimer(1)=12
 bonusTimer(2)=10
 bonusTimer(3)=7
 bonusTimer(4)=5
 
+#RandomArraySize=32
+Dim Random2Array.b(#RandomArraySize)
+For r.b=0 to #RandomArraySize-1
+   Random2Array(r)=Rnd(2) 
+Next
+
+;Dim Random3Array.b(#RandomArraySize)
+
+;For r.b=0 to #RandomArraySize-1
+;   Random3Array(r)=Rnd(3) 
+;Next
+
+;Dim Random7Array.b(#RandomArraySize)
+
+;For r.b=0 to #RandomArraySize-1
+;   Random7Array(r)=Rnd(7) 
+;Next
+
+Random2Ind.b=0
+;Random3Ind.b=0
+;Random7Ind.b=0
 
 NEWTYPE .Level
   map.b[#mapSize]
@@ -283,23 +279,23 @@ End Statement
 
 
 
-;Statement UpdateIndexRandom2Array{n.b}
-;  SHARED Random2Ind
-;  Random2Ind=Random2Ind+1
-;  If Random2Ind>=#RandomArraySize
-;    Random2Ind=0
-;  End If
-;End Statement
+Statement UpdateIndexRandom2Array{}
+ SHARED Random2Ind
+  Random2Ind=Random2Ind+1
+  If Random2Ind>=#RandomArraySize
+    Random2Ind=0
+  End If
+End Statement
 
-;Statement UpdateIndexRandom3Array{n.b}
+;Statement UpdateIndexRandom3Array{}
 ;  SHARED Random3Ind
 ;  Random3Ind=Random3Ind+1
 ;  If Random3Ind>=#RandomArraySize
- ;   Random3Ind=0
+;    Random3Ind=0
 ;  End If
 ;End Statement
 
-;Statement UpdateIndexRandom7Array{n.b}
+;Statement UpdateIndexRandom7Array{}
 ;  SHARED Random7Ind
 ;  Random7Ind=Random7Ind+1
 ;  If Random7Ind>=#RandomArraySize
@@ -1107,8 +1103,8 @@ BlITZ
         If ((\x+8) LSR 4) = ((player(p)\x+8) LSR 4)
           If ((\y+8) LSR 4) = ((player(p)\y+8) LSR 4)
             If \shapeIndex=2
-              \shapeIndex=Rnd(7) ;Random7Array(Random7Ind)
-              ;UpdateIndexRandom7Array{p}
+              \shapeIndex=Rnd(7);Random7Array(Random7Ind)
+              ;UpdateIndexRandom7Array{}
               If \shapeIndex>1
                 \shapeIndex=\shapeIndex+1
               End If
@@ -1379,8 +1375,8 @@ BlITZ
                         \direction=d1
                       End If
                       If (nbDir=2)
-                        c.b=Rnd(2);Random2Array(Random2Ind)
-                        ;UpdateIndexRandom2Array{nbDir}
+                        c.b=Random2Array(Random2Ind)
+                        UpdateIndexRandom2Array{}
                         If (c=1)
                           \direction=d2
                         Else 
@@ -1390,7 +1386,7 @@ BlITZ
 
                       If (nbDir=3)
                         c.b=Rnd(3);Random3Array(Random3Ind)
-                        ;UpdateIndexRandom3Array{c}
+                        ;UpdateIndexRandom3Array{}
                         Select c
                           Case 1
                             \direction=d2
@@ -1806,18 +1802,18 @@ BlITZ
       tile.b=levels(currentLevel)\map[bx+by*#mapWidth]
       If (tile=1 OR tile=3)
         If AddItem(bonus())
-          bonus()\shapeIndex=Rnd(7) ;Random7Array(Random7Ind)
-          ;UpdateIndexRandom7Array{timingUpdate}
+          bonus()\shapeIndex=Rnd(7);Random7Array(Random7Ind)
+          ;UpdateIndexRandom7Array{}
           bonus()\x=bx LSL 4
           bonus()\y=by LSL 4
           bonus()\displayed=2
           bonus()\removed=-1
         End If
       Else
-        px.b=Rnd(2);Random2Array(Random2Ind)
-        ;UpdateIndexRandom2Array{px}
-        py.b=Rnd(2);Random2Array(Random2Ind)
-        ;UpdateIndexRandom2Array{px}
+        px.b=Random2Array(Random2Ind)
+        UpdateIndexRandom2Array{}
+        py.b=Random2Array(Random2Ind)
+        UpdateIndexRandom2Array{}
         If (px=0)
           bx=1
         Else
@@ -1829,8 +1825,8 @@ BlITZ
           yx=#mapHeight-2
         End If
         If AddItem(bonus())
-          bonus()\shapeIndex=Rnd(7) ;Random7Array(Random7Ind)
-          ;UpdateIndexRandom7Array{px}
+          bonus()\shapeIndex=Rnd(7);Random7Array(Random7Ind)
+          ;UpdateIndexRandom7Array{}
           bonus()\x=bx LSL 4
           bonus()\y=by LSL 4
           bonus()\displayed=2
@@ -1894,8 +1890,8 @@ BlITZ
         If selected=0
           If (p<>i AND \targetPlayer = -1 )
               If (player(i)\dead = 0)
-                target.b=Rnd(2) ;Random2Array(Random2Ind)
-                ;UpdateIndexRandom2Array{target}
+                target.b=Random2Array(Random2Ind)
+                UpdateIndexRandom2Array{}
                 If (target=1) 
                     \targetPlayer=p
                     selected=1

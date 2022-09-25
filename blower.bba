@@ -954,7 +954,14 @@ End Statement
     ;World Color
     PaletteWorld{currentWorld}
 
- 
+    ;copy currentmap for performance
+    Dim currentMap.b(#mapWidth,#mapHeight)
+    For x.b=0 to #mapWidth-1
+      For y.b=0 to #mapHeight-1
+        currentMap(x,y)=levels(currentLevel)\map[x+y*#mapWidth]
+      Next
+    Next
+
     ;hud
     DisplayPalette 0,2
     DisplayBitMap 0,2
@@ -1138,7 +1145,7 @@ BlITZ
     Next
     ;remove
     If \removed>0
-      tile.b=levels(currentLevel)\map[(\x LSR 4)+(\y LSR 4)*#mapWidth]
+      tile.b=currentMap(\x LSR 4,\y LSR 4)
       Blit tile-1+currentWorld LSL 3,\x,\y,4 ;Block doesn't support excess
       \removed=\removed-1
       If \removed=0
@@ -1305,20 +1312,20 @@ BlITZ
               nextTileB.b=0
               ;Wall Collision
               If (\direction=1)
-                nextTileA.b=levels(currentLevel)\map[((next_x+16) LSR 4)+((next_y+1) LSR 4)*#mapWidth]
-                nextTileB.b=levels(currentLevel)\map[((next_x+16) LSR 4)+((next_y+14) LSR 4)*#mapWidth]
+                nextTileA.b=currentMap((next_x+16) LSR 4,(next_y+1) LSR 4)
+                nextTileB.b=currentMap((next_x+16) LSR 4,(next_y+14) LSR 4)
               End If
               If (\direction=3)
-                nextTileA.b=levels(currentLevel)\map[((next_x-1) LSR 4)+((next_y+1) LSR 4)*#mapWidth]
-                nextTileB.b=levels(currentLevel)\map[((next_x-1) LSR 4)+((next_y+14) LSR 4)*#mapWidth]
+                nextTileA.b=currentMap((next_x-1) LSR 4,(next_y+1) LSR 4)
+                nextTileB.b=currentMap((next_x-1) LSR 4,(next_y+14) LSR 4)
               End If
               If (\direction=0)
-                nextTileA.b=levels(currentLevel)\map[((next_x+3) LSR 4)+((next_y-1) LSR 4)*#mapWidth]
-                nextTileB.b=levels(currentLevel)\map[((next_x+12) LSR 4)+((next_y-1) LSR 4)*#mapWidth]
+                nextTileA.b=currentMap((next_x+3) LSR 4,(next_y-1) LSR 4)
+                nextTileB.b=currentMap((next_x+12) LSR 4,(next_y-1) LSR 4)
               End If
               If (\direction=2)
-                nextTileA.b=levels(currentLevel)\map[((next_x+3) LSR 4)+((next_y+16) LSR 4)*#mapWidth]
-                nextTileB.b=levels(currentLevel)\map[((next_x+12) LSR 4)+((next_y+16) LSR 4)*#mapWidth]
+                nextTileA.b=currentMap((next_x+3) LSR 4,(next_y+16) LSR 4)
+                nextTileB.b=currentMap((next_x+12) LSR 4,(next_y+16) LSR 4)
               End If
 
               If nextTileA=1 OR nextTileA=3
@@ -1347,13 +1354,13 @@ BlITZ
                         tilew.b
                         Select d
                           Case 0
-                            tilew=levels(currentLevel)\map[((next_x+8) LSR 4)+((next_y-8) LSR 4)*#mapWidth]
+                            tilew=currentMap((next_x+8) LSR 4,(next_y-8) LSR 4)
                           Case 1
-                            tilew=levels(currentLevel)\map[((next_x+24) LSR 4)+((next_y+8) LSR 4)*#mapWidth]
+                            tilew=currentMap((next_x+24) LSR 4,(next_y+8) LSR 4)
                           Case 2
-                            tilew=levels(currentLevel)\map[((next_x+8) LSR 4)+((next_y+24) LSR 4)*#mapWidth]
+                            tilew=currentMap((next_x+8) LSR 4,(next_y+24) LSR 4)
                           Case 3
-                            tilew=levels(currentLevel)\map[((next_x-8) LSR 4)+((next_y+8) LSR 4)*#mapWidth]
+                            tilew=currentMap((next_x-8) LSR 4,(next_y+8) LSR 4)
                         End Select
                         cdir.b=(tilew=1 OR tilew=3)
                        ; STOP
@@ -1802,7 +1809,7 @@ BlITZ
       bonusTimerBuffer=bonusTimer(bonusCounter)
       bx.w=1+Rnd(#mapWidth-2)
       by.w=1+Rnd(#mapHeight-2)
-      tile.b=levels(currentLevel)\map[bx+by*#mapWidth]
+      tile.b=currentMap(bx,by)
       If (tile=1 OR tile=3)
         If AddItem(bonus())
           bonus()\shapeIndex=R7A(R7Ind)

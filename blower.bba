@@ -10,34 +10,32 @@
 ;  9-23 Player
 ;  25-26 Bonus
 ;  20 Player
-;  27-31 Flam Thrower
+;  27-31 Flam Thrower 
 ;
-; Shape :
-;  0 Buffer shape for GetaSprite
-;  1-4 World1
-;  11-14 World2
-;  21-24 World3
-;  26-30 HUD - Player
-;  31-34 World4
-;  36-38 HUD - Avatar
-;  50-90 Avatar 1
-;  100-140 Avatar 2
-;  150-190 Avatar 3
-;  100-140 Avatar 4
-;  250-350 Font
-;  320-362 Bullets
-;  370-382 FlamThrower
 ;****************************************
 
 NoCli
 WBStartup
 CloseWorkBench_
 
+#RandomArraySize=25
+
+Dim R3A.b(#RandomArraySize)
+EVEN
+For r.b=0 to #RandomArraySize-1
+  R3A(r)=Rnd(3) 
+Next
+
+
+
 ;cfree1.l=ChipFree
 
 DEFTYPE .w
 Amiga
-#Debug=0
+
+
+
+;#Debug=0
 #skipIntro=0 ;1 to skip intro
 
 #mapWidth=20
@@ -95,8 +93,20 @@ currentWorld.b=2
 currentLevel.b=0
 nbPlayer.b=4
 
-Dim chosenPlayer.b(4)
+Dim R7A.b(#RandomArraySize)
+EVEN
+For r.b=0 to #RandomArraySize-1
+   R7A(r)=Rnd(7) 
+Next
 
+Dim R2A.b(#RandomArraySize)
+EVEN
+For r.b=0 to #RandomArraySize-1
+   R2A(r)=Rnd(2) 
+Next
+
+Dim chosenPlayer.b(4)
+EVEN
 chosenPlayer(0)=1
 chosenPlayer(1)=0
 chosenPlayer(2)=-1
@@ -104,33 +114,17 @@ chosenPlayer(3)=-1
 
 
 Dim bonusTimer.b(5)
+EVEN
 bonusTimer(0)=15
 bonusTimer(1)=12
 bonusTimer(2)=10
 bonusTimer(3)=7
 bonusTimer(4)=5
 
-#RandomArraySize=32
-Dim Random2Array.b(#RandomArraySize)
-For r.b=0 to #RandomArraySize-1
-   Random2Array(r)=Rnd(2) 
-Next
 
-;Dim Random3Array.b(#RandomArraySize)
-
-;For r.b=0 to #RandomArraySize-1
-;   Random3Array(r)=Rnd(3) 
-;Next
-
-;Dim Random7Array.b(#RandomArraySize)
-
-;For r.b=0 to #RandomArraySize-1
-;   Random7Array(r)=Rnd(7) 
-;Next
-
-Random2Ind.b=0
-;Random3Ind.b=0
-;Random7Ind.b=0
+R2Ind.b=0
+R3Ind.b=0
+R7Ind.b=0
 
 NEWTYPE .Level
   map.b[#mapSize]
@@ -207,7 +201,8 @@ Statement PrintText{txt$,txtX.w,txtY.w}
   BLITZ
   counter.b = 0
   textLen.b=Len(txt$)
-  Dim display.b(textLen)  
+  Dim display.b(textLen) 
+  EVEN 
   For i.b = 1 To textLen
       oneString$ = Mid$(txt$, i, 1)
       oneAsc = Asc(oneString$)
@@ -279,34 +274,34 @@ End Statement
 
 
 
-Statement UpdateIndexRandom2Array{}
- SHARED Random2Ind
-  Random2Ind=Random2Ind+1
-  If Random2Ind>=#RandomArraySize
-    Random2Ind=0
+Statement UpdateIndexR2A{}
+ SHARED R2Ind
+  R2Ind=R2Ind+1
+  If R2Ind>=#RandomArraySize
+    R2Ind=0
   End If
 End Statement
 
-;Statement UpdateIndexRandom3Array{}
-;  SHARED Random3Ind
-;  Random3Ind=Random3Ind+1
-;  If Random3Ind>=#RandomArraySize
-;    Random3Ind=0
-;  End If
-;End Statement
+Statement UpdateIndexR3A{}
+  SHARED R3Ind
+  R3Ind=R3Ind+1
+  If R3Ind>=#RandomArraySize
+    R3Ind=0
+  End If
+End Statement
 
-;Statement UpdateIndexRandom7Array{}
-;  SHARED Random7Ind
-;  Random7Ind=Random7Ind+1
-;  If Random7Ind>=#RandomArraySize
-;    Random7Ind=0
-;  End If
-;End Statement
+Statement UpdateIndexR7A{}
+  SHARED R7Ind
+  R7Ind=R7Ind+1
+  If R7Ind>=#RandomArraySize
+    R7Ind=0
+  End If
+End Statement
 
 
 ;Usage
-;a.b=Random2Array(Random2Ind)
-;UpdateIndexRandom2Array{}
+;a.b=R2A(R2Ind)
+;UpdateIndexR2A{}
 
 
 .Intro:
@@ -559,6 +554,7 @@ End Statement
   Free BitMap 9
 
   Dim levels.Level(#levelsCount)
+  EVEN
   GoSub LoadLevels
 
 
@@ -683,6 +679,7 @@ End Statement
   menuX.w=70
   menuXPadding.w=40
   Dim menuY.w(4)
+  EVEN
   menuY(0)=10 
   menuY(1)=30
   menuY(2)=60
@@ -868,6 +865,7 @@ End Statement
   ;Init player
   nbPlayer=4
   Dim player.player(nbPlayer)
+  EVEN
   
     ;Game Mode  
   Select chosenMode
@@ -882,6 +880,7 @@ End Statement
   For i.b=0 to (nbPlayer-1)
     cp.b=i
     Gosub InitPlayer
+    player(i)\score=0
   Next
  
   remainingLevels.b=#levelsCount
@@ -968,11 +967,14 @@ End Statement
     VWait
 
     Dim List bullets.Bullet(8)
+    EVEN
 
     Dim List sndevents.sfx(8)
+    EVEN
     
 
     Dim List bonus.Bonus(3) ;concurrent bonus
+    EVEN
     bonusCounter.b=0 ;bonus number
     bonusTimerBuffer.l=bonusTimer(bonusCounter) ; current bonus timer buffer
 
@@ -998,7 +1000,6 @@ End Statement
     FlushBuffer 1
     currentLevel=currentLevel+1
   Until (RawStatus($45) OR currentLevel>=#levelsCount)
-  Dim rank.b(nbPlayer)
   If (currentLevel>=#levelsCount AND remainingPlayers<2)
     Gosub ScoreEnd
   End If
@@ -1070,6 +1071,7 @@ BlITZ
   MOVE.w #$0f0,$dff180 ; green
 
   Dim cpuWalls.b(3)
+  EVEN
   ;  First process dead so they are at the background
   For i.b=0 to (nbPlayer-1)
     UsePath player(i)
@@ -1103,8 +1105,8 @@ BlITZ
         If ((\x+8) LSR 4) = ((player(p)\x+8) LSR 4)
           If ((\y+8) LSR 4) = ((player(p)\y+8) LSR 4)
             If \shapeIndex=2
-              \shapeIndex=Rnd(7);Random7Array(Random7Ind)
-              ;UpdateIndexRandom7Array{}
+              \shapeIndex=R7A(R7Ind)
+              UpdateIndexR7A{}
               If \shapeIndex>1
                 \shapeIndex=\shapeIndex+1
               End If
@@ -1375,8 +1377,8 @@ BlITZ
                         \direction=d1
                       End If
                       If (nbDir=2)
-                        c.b=Random2Array(Random2Ind)
-                        UpdateIndexRandom2Array{}
+                        c.b=R2A(R2Ind)
+                        UpdateIndexR2A{}
                         If (c=1)
                           \direction=d2
                         Else 
@@ -1385,8 +1387,8 @@ BlITZ
                       End If
 
                       If (nbDir=3)
-                        c.b=Rnd(3);Random3Array(Random3Ind)
-                        ;UpdateIndexRandom3Array{}
+                        c.b=R3A(R3Ind)
+                        UpdateIndexR3A{}
                         Select c
                           Case 1
                             \direction=d2
@@ -1490,6 +1492,7 @@ BlITZ
             fy.w=0
             
             Dim cols.b(nbPlayer-1)
+            EVEN
             Select \direction
               Case 0
               ;display
@@ -1802,18 +1805,18 @@ BlITZ
       tile.b=levels(currentLevel)\map[bx+by*#mapWidth]
       If (tile=1 OR tile=3)
         If AddItem(bonus())
-          bonus()\shapeIndex=Rnd(7);Random7Array(Random7Ind)
-          ;UpdateIndexRandom7Array{}
+          bonus()\shapeIndex=R7A(R7Ind)
+          UpdateIndexR7A{}
           bonus()\x=bx LSL 4
           bonus()\y=by LSL 4
           bonus()\displayed=2
           bonus()\removed=-1
         End If
       Else
-        px.b=Random2Array(Random2Ind)
-        UpdateIndexRandom2Array{}
-        py.b=Random2Array(Random2Ind)
-        UpdateIndexRandom2Array{}
+        px.b=R2A(R2Ind)
+        UpdateIndexR2A{}
+        py.b=R2A(R2Ind)
+        UpdateIndexR2A{}
         If (px=0)
           bx=1
         Else
@@ -1825,8 +1828,8 @@ BlITZ
           yx=#mapHeight-2
         End If
         If AddItem(bonus())
-          bonus()\shapeIndex=Rnd(7);Random7Array(Random7Ind)
-          ;UpdateIndexRandom7Array{}
+          bonus()\shapeIndex=R7A(R7Ind)
+          UpdateIndexR7A{}
           bonus()\x=bx LSL 4
           bonus()\y=by LSL 4
           bonus()\displayed=2
@@ -1890,8 +1893,8 @@ BlITZ
         If selected=0
           If (p<>i AND \targetPlayer = -1 )
               If (player(i)\dead = 0)
-                target.b=Random2Array(Random2Ind)
-                UpdateIndexRandom2Array{}
+                target.b=R2A(R2Ind)
+                UpdateIndexR2A{}
                 If (target=1) 
                     \targetPlayer=p
                     selected=1
@@ -2061,7 +2064,7 @@ BlITZ
         cjoy=1-cjoy ; invert because of port 2 as joy port on amiga
       EndIf
       Use Bitmap 2
-      Block #ShapeIndexHUDPlayer+cjoy,48,0
+      Block #ShapeIndexHUDPlayer+1+cjoy,48,0
       Block #ShapeIndexHUDAvatar+i,16+48,0
       PrintText{"Player "+str$(i+1)+" WON!",48+42,6}
       Use Bitmap 1-db
@@ -2124,6 +2127,7 @@ BlITZ
     score.w
     pindex.b
   END NEWTYPE
+
   Dim List listPlayer.playerIndex(4)
   For i.b=0 to 3
     If AddItem(listPlayer())
@@ -2147,15 +2151,16 @@ BlITZ
   ResetList listPlayer()
   i.b=0
   While NextItem(listPlayer())
-    PrintText{str$(i+1)+".",112,32+6+i LSL 4}
+    PrintText{str$(i+1)+".",112,32+6+i LSL 5}
     cjoy.b=player(\pindex)\joy
     If (cjoy >= 0 and cjoy < 2)
       cjoy=1-cjoy ; invert because of port 2 as joy port on amiga
     EndIf
-    Block #ShapeIndexHUDAvatar+\pindex,128,128-i LSL 4
-    Block #ShapeIndexHUDPlayer+cjoy,160,128-i LSL 4
-    PrintText{"- "+str$(\score),182,128+6-i LSL 4}
+    Block #ShapeIndexHUDAvatar+\pindex,128,128-i LSL 5
+    Block #ShapeIndexHUDPlayer+1+cjoy,160,128-i LSL 5
+    PrintText{"- "+str$(\score),182,128+6-i LSL 5}
     i=i+1;
+
   Wend
   DisplayBitMap 1,0
   bufferTxt.b=80

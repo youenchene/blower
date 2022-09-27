@@ -1679,11 +1679,11 @@ BlITZ
 
   MOVE.w #$f00,$dff180 ; red
 
-  ;Update and Draw Sprites
+  ;Update and Draw bullets
   USEPATH bullets()
   ResetList bullets()
   While NextItem(bullets())
-    dot.b
+    tileB.b
     if (\endLife <> -1)
       \animIndex=2
       \endLife=\endLife-1
@@ -1692,7 +1692,7 @@ BlITZ
         \init=\init-1
         \animIndex=0
       Else
-         bound.b=0
+        bound.b=0
         If (\x<16):\x=16:bound=-1:EndIf
         If (\y<16):\y=16:bound=-1:EndIf
         If (\x>304):\x=295:bound=-1:EndIf
@@ -1700,25 +1700,25 @@ BlITZ
         If bound=0
           If (\direction=0)
             \y=\y-\speed   
-            dot.b=Point(\x2,\y-1)
+            tileB=currentMap(\x2 LSR 4,(\y-1) LSR 4)
           EndIf
           If (\direction=1)
             \x=\x+\speed 
-            dot.b=Point(\x+6,\y2)
+            tileB=currentMap((\x+6) LSR 4,\y2 LSR 4)
           EndIf
           If (\direction=2)
             \y=\y+\speed   
-            dot.b=Point(\x2,\y+6)  
+            tileB=currentMap(\x2 LSR 4,(\y+6) LSR 4)
           EndIf
           If (\direction=3)
             \x=\x-\speed 
-            dot.b=Point(\x-1,\y2)
+            tileB=currentMap((\x-1) LSR 4,\y2 LSR 4)
           EndIf
         End If
         \animIndex=1
-
+        colB.b=(tileB=2 OR tileB=4)
         ;Collision with wall
-        If ((dot>=#wallColor1 AND dot<=#wallColor2) OR bound.b=-1)
+        If (colB OR bound.b)
          bullets()\endLife=#endAnimCount
          If AddItem(sndevents())
             If \x >= 160
@@ -1750,39 +1750,48 @@ BlITZ
     EndIf
     ;Collision with avatars
     if (\endLife = -1)
-      If (dot>=#avatarColor1 AND dot<=#avatarColor2)
-        ;Box xb-7,yb-7,xb-7+14,yb-7+14,8;debug
+        xba.b=(xb) LSR 5
+        yba.b=(yb) LSR 5
+        ;Box xba*32,yba*32,xba*32+32,yba*32+32,26;debug
         For p.b=0 to (nbPlayer-1)
           If (\srcAvatar <> player(p)\avatar)
             If (player(p)\invincible=0)
-              If (player(p)\dead = 0) ; not dead
-                ;Box player(p)\x,player(p)\y,player(p)\x+16,player(p)\y+16,9;debug
-                If RectsHit(xb-7,yb-7,14,14,player(p)\x,player(p)\y,16,16) ; larger to void more calculus
-                  bullets()\endLife=#endAnimCount ; End bullet
-                  player(p)\previousEnergy=player(p)\energy
-                  player(p)\energy=player(p)\energy-\bulletImpact
-                  player(p)\shot=#shotAnim
-                  ; CPU if been shot new target is the avatar who shot the CPU
-                  If player(p)\joy=-1
-                    player(p)\targetPlayer=\srcAvatar
-                  End If
-                  ;End CPU
-                  If AddItem(sndevents())
-                    If \x >= 160
-                      SFXInit{&sndevents(),3,64,1,8}
-                    Else
-                      SFXInit{&sndevents(),3,64,0,8}
-                    Endif
-                  End If
-                  If (player(p)\energy <= 0)
-                    player(p)\dead=3
+              ; larg detection on a 32 x 32 blocks
+              ;xbo.w=((player(p)\x+8) LSR 5)*32
+              ;ybo.w=((player(p)\y+8) LSR 5)*32
+              ;Box xbo,ybo,xbo+32,ybo+32,25;debug
+              If (((player(p)\x+8) LSR 5) = xba)
+                If (((player(p)\y+8) LSR 5) = yba)
+                  If (player(p)\dead = 0) ; not dead
+                    ;Box xb-7,yb-7,xb+7,yb+7,15;debug
+                    ;Box player(p)\x-1,player(p)\y-1,player(p)\x+17,player(p)\y+17,10;debug
+                    If RectsHit(xb-7,yb-7,14,14,player(p)\x,player(p)\y,16,16) ; larger to void more calculus
+                      bullets()\endLife=#endAnimCount ; End bullet
+                      player(p)\previousEnergy=player(p)\energy
+                      player(p)\energy=player(p)\energy-\bulletImpact
+                      player(p)\shot=#shotAnim
+                      ; CPU if been shot new target is the avatar who shot the CPU
+                      If player(p)\joy=-1
+                        player(p)\targetPlayer=\srcAvatar
+                      End If
+                      ;End CPU
+                      If AddItem(sndevents())
+                        If \x >= 160
+                          SFXInit{&sndevents(),3,64,1,8}
+                        Else
+                          SFXInit{&sndevents(),3,64,0,8}
+                        Endif
+                      End If
+                      If (player(p)\energy <= 0)
+                        player(p)\dead=3
+                      EndIf
+                    EndIf
                   EndIf
                 EndIf
               EndIf
             EndIf
           EndIf
         Next
-      EndIf
     Endif
     ;Display
     If \animIndex=1

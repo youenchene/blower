@@ -598,6 +598,9 @@ End Statement
   LoadSound 6,"assets/snd/step-wood.iff"
   LoadSound 7,"assets/snd/step-grass.iff"
   LoadSound 8,"assets/snd/step-road.iff"
+  LoadSound 9,"assets/snd/loadgun.iff"
+  LoadSound 10,"assets/snd/loadgun2.iff"
+  LoadSound 11,"assets/snd/flame.iff"
 
 .LoadTitleScreen:
   Bitmap 8, 320, 128, 5
@@ -979,6 +982,7 @@ End Statement
     Dim List sndevents.sfx(8)
     EVEN
     
+    flameSFX.w=0
 
     Dim List bonus.Bonus(3) ;concurrent bonus
     EVEN
@@ -1057,7 +1061,7 @@ BlITZ
 
   VWait
   DisplayBitMap 1,db
-  MOVE.w #$f00,$dff180 ; ref
+  ;MOVE.w #$f00,$dff180 ; ref
   
   timerBuffer=timerBuffer+1
   timingUpdate.b=0
@@ -1071,11 +1075,11 @@ BlITZ
   Use Bitmap db
   
   a.w=0
-  MOVE.w #$00f,$dff180 ; blue
+  ;MOVE.w #$00f,$dff180 ; blue
 
   UnBuffer db
 
-  MOVE.w #$0f0,$dff180 ; green
+  ;MOVE.w #$0f0,$dff180 ; green
 
   Dim cpuWalls.b(3)
   EVEN
@@ -1095,7 +1099,7 @@ BlITZ
     EndIf
   Next
 
-  MOVE.w #$0ff,$dff180 ;  cyan
+  ;MOVE.w #$0ff,$dff180 ;  cyan
 
   ;Display Bonus
   USEPATH bonus()
@@ -1130,12 +1134,30 @@ BlITZ
               Case 4 ; 1 shots
                 player(p)\bulletImpact=#energyBulletImpact1
                 player(p)\timerBonus=#timerBonusInit
+                If \removed = -1
+                  If AddItem(sndevents())
+                    If \x >= 160
+                      SFXInit{&sndevents(),9,64,2,12}
+                    Else
+                      SFXInit{&sndevents(),9,64,3,12}
+                    End If
+                  End If
+                End If
               Case 5 ; Speed
                 player(p)\stepsize=#stepSizeBoost
                 player(p)\timerBonus=#timerBonusInit
               Case 6 ; 2shots
                 player(p)\bulletImpact=#energyBulletImpact2
                 player(p)\timerBonus=#timerBonusInit
+                If \removed = -1
+                  If AddItem(sndevents())
+                    If \x >= 160
+                      SFXInit{&sndevents(),10,64,2,12}
+                    Else
+                      SFXInit{&sndevents(),10,64,3,12}
+                    Endif
+                  End If
+                End If
             End Select
             \removed=2
             p=nbPlayer ; exit loop
@@ -1159,13 +1181,13 @@ BlITZ
   For i.b=0 to (nbPlayer-1)
     Select i
       Case 0
-        MOVE.w #$f00,$dff180 ; red
+        ;MOVE.w #$f00,$dff180 ; red
       Case 1
-        MOVE.w #$0f0,$dff180 ; green
+        ;MOVE.w #$0f0,$dff180 ; green
       Case 2
-        MOVE.w #$00f,$dff180 ; blue
+        ;MOVE.w #$00f,$dff180 ; blue
       Case 3
-       MOVE.w #$0ff,$dff180 ; cyan 
+       ;MOVE.w #$0ff,$dff180 ; cyan 
     End Select
        
     UsePath player(i)
@@ -1432,7 +1454,7 @@ BlITZ
                 End If
               End If
 
-             MOVE.w #$000,$dff180 ; black 
+             ;MOVE.w #$000,$dff180 ; black 
               ;let's move
               If (allowMoveA AND allowMoveB) ;Move
                 If (\direction=1 OR \direction=3)
@@ -1474,9 +1496,9 @@ BlITZ
                 \animIndex=0
                   If AddItem(sndevents())
                     If \x >= 160
-                      SFXInit{&sndevents(),5+currentWorld,32,1,5}
+                      SFXInit{&sndevents(),5+currentWorld,10,1,5}
                     Else
-                      SFXInit{&sndevents(),5+currentWorld,32,0,5}
+                      SFXInit{&sndevents(),5+currentWorld,10,0,5}
                     Endif
                   End If
               Else
@@ -1497,6 +1519,16 @@ BlITZ
             End if
             fx.w=0
             fy.w=0
+            If flameSFX=0
+              If AddItem(sndevents())
+                If \x >= 160
+                  SFXInit{&sndevents(),11,64,2,11}
+                Else
+                  SFXInit{&sndevents(),11,64,3,11}
+                End If
+                flameSFX=52
+              End If
+            End If
             
             Dim cols.b(nbPlayer-1)
             EVEN
@@ -1624,7 +1656,7 @@ BlITZ
                     bullets()\channel=2-\bullets
                     bullets()\srcAvatar=\avatar
                     bullets()\bulletImpact=\bulletImpact
-                    MOVE.w #$fff,$dff180 ; white
+                    ;MOVE.w #$fff,$dff180 ; white
                     if (currentJoy=-1)
                       \waitBullet=#waitBulletCPU
                       ; if shoot then move
@@ -1651,7 +1683,7 @@ BlITZ
             End If
           End If
         End If
-        MOVE.w #$000,$dff180 ; black
+        ;MOVE.w #$000,$dff180 ; black
         a=#ShapeIndexAvatars+1+\avatar LSL 5+\direction LSL 3+\animIndex
       End If
       
@@ -1677,7 +1709,7 @@ BlITZ
   next
   currentCPU=nextCurrentCPU
 
-  MOVE.w #$f00,$dff180 ; red
+  ;MOVE.w #$f00,$dff180 ; red
 
   ;Update and Draw bullets
   USEPATH bullets()
@@ -1808,7 +1840,7 @@ BlITZ
 
   Wend
 
-  MOVE.w #$0f0,$dff180 ; green
+  ;MOVE.w #$0f0,$dff180 ; green
 
   ;Manage Bonus
   If (timingUpdate)
@@ -1855,7 +1887,7 @@ BlITZ
     End If
   End If
 
-  MOVE.w #$00f,$dff180 ; blue
+  ;MOVE.w #$00f,$dff180 ; blue
 
   switchB2.b=0
   ;HUD Update
@@ -1885,17 +1917,19 @@ BlITZ
     End If
   Next
 
-  MOVE.w #$ff0,$dff180 ; yellow
+  ;MOVE.w #$ff0,$dff180 ; yellow
 
   ;Process sounds
   USEPATH sndevents()
   ResetList sndevents()
-  prio.b=0
   While NextItem(sndevents())
     MTPlayFX &sndevents()
     KillItem sndevents() 
   Wend
-  MOVE.w #$f0f,$dff180 ; purple
+  If flameSFX>0
+    flameSFX=flameSFX-1
+  End If
+  ;MOVE.w #$f0f,$dff180 ; purple
   Return
 
 .CPUMove:

@@ -18,7 +18,7 @@ NoCli
 WBStartup
 CloseWorkBench_
 
-#RandomArraySize=25
+#RandomArraySize=31
 
 Dim R3A.b(#RandomArraySize)
 EVEN
@@ -598,9 +598,15 @@ End Statement
   LoadSound 6,"assets/snd/step-wood.iff"
   LoadSound 7,"assets/snd/step-grass.iff"
   LoadSound 8,"assets/snd/step-road.iff"
+  DEFTYPE .sfx loadgun
   LoadSound 9,"assets/snd/loadgun.iff"
+  SFXInit{&loadgun,9,64,-1,10}
   LoadSound 10,"assets/snd/loadgun2.iff"
   LoadSound 11,"assets/snd/flame.iff"
+  LoadSound 12,"assets/snd/miam.iff"
+  LoadSound 13,"assets/snd/speed.iff"
+  LoadSound 14,"assets/snd/fire.iff"
+  LoadSound 15,"assets/snd/invicible.iff"
 
 .LoadTitleScreen:
   Bitmap 8, 320, 128, 5
@@ -765,6 +771,7 @@ End Statement
         Select mi
           Case 0
             If (btn) 
+              MTPlayFX &loadgun
               For i.b = 0 to 50
                 FadePalette 3, 4,1-i / 50
                 DisplayPalette 2, 4
@@ -1125,12 +1132,39 @@ BlITZ
             Select \shapeIndex
               Case 0 ; Energy
                 player(p)\energy=15
+                If \removed = -1
+                  If AddItem(sndevents())
+                    If \x >= 160
+                      SFXInit{&sndevents(),12,64,2,12}
+                    Else
+                      SFXInit{&sndevents(),12,64,3,12}
+                    End If
+                  End If
+                End If
               Case 1 ; FlameThrower
                 player(p)\flameThrower=1
                 player(p)\timerBonus=#timerBonusInit
+                If \removed = -1
+                  If AddItem(sndevents())
+                    If \x >= 160
+                      SFXInit{&sndevents(),14,64,2,12}
+                    Else
+                      SFXInit{&sndevents(),14,64,3,12}
+                    End If
+                  End If
+                End If
               Case 3 ; Invincible
                 player(p)\invincible=1
                 player(p)\timerBonus=#timerBonusInit
+                If \removed = -1
+                  If AddItem(sndevents())
+                    If \x >= 160
+                      SFXInit{&sndevents(),15,64,2,12}
+                    Else
+                      SFXInit{&sndevents(),15,64,3,12}
+                    End If
+                  End If
+                End If
               Case 4 ; 1 shots
                 player(p)\bulletImpact=#energyBulletImpact1
                 player(p)\timerBonus=#timerBonusInit
@@ -1146,6 +1180,15 @@ BlITZ
               Case 5 ; Speed
                 player(p)\stepsize=#stepSizeBoost
                 player(p)\timerBonus=#timerBonusInit
+                If \removed = -1
+                  If AddItem(sndevents())
+                    If \x >= 160
+                      SFXInit{&sndevents(),13,64,2,12}
+                    Else
+                      SFXInit{&sndevents(),13,64,3,12}
+                    End If
+                  End If
+                End If
               Case 6 ; 2shots
                 player(p)\bulletImpact=#energyBulletImpact2
                 player(p)\timerBonus=#timerBonusInit

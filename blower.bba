@@ -234,41 +234,41 @@ End Statement
 Statement PaletteWorld{n.b}
   Select n
     Case 0
-      PalRGB 1,1,15,15,0
-      PalRGB 1,2,12,15,12
-      PalRGB 1,3,15,9,4
-      PalRGB 1,4,15,12,7
-      PalRGB 1,5,12,12,12
-      PalRGB 1,6,9,9,8
+      PalRGB 1,1,13,13,6
+      PalRGB 1,2,5,5,2
+      PalRGB 1,3,12,12,5
+      PalRGB 1,4,14,14,6
+      PalRGB 1,5,9,9,8
+      PalRGB 1,6,12,12,12
       PalRGB 1,7,0,15,3
       PalRGB 1,8,0,12,6
     Case 1
       PalRGB 1,1,0,6,6
       PalRGB 1,2,0,6,12
       PalRGB 1,3,0,0,0
-      PalRGB 1,4,0,0,0
+      PalRGB 1,4,11,11,11
       PalRGB 1,5,3,3,3
       PalRGB 1,6,6,6,6
       PalRGB 1,7,9,9,9
-      PalRGB 1,8,9,9,9
+      PalRGB 1,8,0,12,6
     Case 2 
-      PalRGB 1,1,0,15,3
-      PalRGB 1,2,3,9,3
-      PalRGB 1,3,0,12,6
+      PalRGB 1,1,2,13,4
+      PalRGB 1,2,4,9,5
+      PalRGB 1,3,2,12,6
       PalRGB 1,4,15,9,5
       PalRGB 1,5,9,9,8
       PalRGB 1,6,13,12,10
       PalRGB 1,7,0,6,3
-      PalRGB 1,8,9,3,0 
+      PalRGB 1,8,11,5,0
     Case 3
-      PalRGB 1,1,12,12,12
-      PalRGB 1,2,9,9,6
+      PalRGB 1,1,10,10,10
+      PalRGB 1,2,8,8,8
       PalRGB 1,3,9,9,9
       PalRGB 1,4,6,6,6
-      PalRGB 1,5,9,6,4
+      PalRGB 1,5,8,5,3
       PalRGB 1,6,12,9,5
-      PalRGB 1,7,8,3,1
-      PalRGB 1,8,9,6,0
+      PalRGB 1,7,7,4,2
+      PalRGB 1,8,9,6,3
     End Select 
 End Statement
 
@@ -415,9 +415,12 @@ End Statement
   Use Bitmap 7
   VWAIT 100
   Blitz
-  PrintText{"Music : Sunset Rebels by Roald Strauss",10,94}
-  PrintText{"Grafx enhanced by TheoTheoderich",10,100}
-  PrintText{"Loading game...",10,106}
+  PrintText{"Game created by Youen Chene",10,94}
+  PrintText{"For the amiga Blitz Basic Game Jam 2022",10,100}
+  PrintText{"Music : Sunset Rebels by Roald Strauss",10,112}
+  PrintText{"All SoundFX created with my kids using our mouths and toys",10,118}
+  PrintText{"Grafx contribution by TheoTheoderich",10,124}
+  PrintText{"Loading game...",10,136}
 
   QAMIGA
 

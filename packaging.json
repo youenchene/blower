@@ -14,6 +14,44 @@
             "foldersToInclude": [
                 "assets"
             ]
+        },
+        {
+            "type": "cdtv",
+            "boot": true,
+            "supportName": "Blower",
+            "supportVolumeSet": "",
+            "supportPublisher": "Micrix Production",
+            "supportPreparer": "",
+            "supportApplication": "",
+            "exeToLaunch": "blower.exe",
+            "includeDiskFontLibrary": true,
+            "includeMathTransLibrary": false,
+            "filesToIncludeOnRoot": [
+                "blower.exe",
+                "blower.exe.info"
+            ],
+            "foldersToInclude": [
+                "assets"
+            ]
+        },
+        {
+            "type": "cd32",
+            "boot": true,
+            "supportName": "Blower_CD32",
+            "supportVolumeSet": "",
+            "supportPublisher": "Micrix Production",
+            "supportPreparer": "",
+            "supportApplication": "",
+            "exeToLaunch": "blower.exe",
+            "includeDiskFontLibrary": true,
+            "includeMathTransLibrary": false,
+            "filesToIncludeOnRoot": [
+                "blower.exe",
+                "blower.exe.info"
+            ],
+            "foldersToInclude": [
+                "assets"
+            ]
         }
     ]
 }

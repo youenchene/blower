@@ -52,6 +52,19 @@
             "foldersToInclude": [
                 "assets"
             ]
+        },
+        {
+            "type": "zip",
+            "supportName": "Blower_HD",
+            "folderIcon": "Blower_HD.info",
+            "exeToLaunch": "blower.exe",
+            "filesToIncludeOnRoot": [
+                "blower.exe",
+                "blower.exe.info"
+            ],
+            "foldersToInclude": [
+                "assets"
+            ]
         }
     ]
 }

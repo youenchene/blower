@@ -18,7 +18,7 @@ NoCli
 WBStartup
 CloseWorkBench_
 
-#RandomArraySize=31
+#RandomArraySize=64
 
 Dim R3A.b(#RandomArraySize)
 EVEN
@@ -51,8 +51,8 @@ Amiga
 #stepSizeDefault=4
 #stepSizeBoost=6
 #maxEnergy=15
-#bufferDirection=8
-#bufferDirectionWall=8
+#bufferDirection=16
+#bufferDirectionWall=24
 
 #ShapeIndexHUDAvatar=32
 #ShapeIndexHUDPlayer=48
@@ -78,10 +78,10 @@ energyBulletImpact.b=#energyBulletImpactNormal
 #bufferFlamethrower=4
 
 ;CPU Behaviour
-#waitBulletCPU=35
-#CPUBufferStateInit=70
-#CPUBufferMoveTypeAvoidInit=30
-#CPUBufferMoveTypeInit=40
+#waitBulletCPU=20
+#CPUBufferStateInit=35
+#CPUBufferMoveTypeAvoidInit=20
+#CPUBufferMoveTypeInit=25
 #distanceCPUShot=16
 #distanceCPU=9
 #tooFarCPU=72
@@ -133,7 +133,7 @@ End NEWTYPE
 NEWTYPE .player
   x.w
   y.w
-  dead.b
+  dead.b ;0: alive  2: is going to dead
   direction.b
   animIndex.b
   frameAnim.b
@@ -164,6 +164,7 @@ NEWTYPE .player
   CPUMoveType.b  ;0 get closer 1  avoid
   CPUBufferState.w 
   CPUBufferMoveType.w 
+  CPUTask.b ;Task to do at the frame (performance issue) : 0: calculate move direction 1  1: avoid obstacle
   previousVJoyx.b
   previousVJoyy.b
 End NEWTYPE 
@@ -1007,6 +1008,8 @@ End Statement
     MTPlay Off
     MTEnd
 
+    cursorCPU.b=0 
+
     Repeat
       Gosub GameLoop
     Until (RawStatus($45) OR remainingPlayers<2) ; Escape pressed
@@ -1049,6 +1052,7 @@ BlITZ
   \timerBonus=0
   \CPUBufferState=#CPUBufferStateInit
   \CPUState=0 ;Start with move and shoot
+  \CPUTask=0 
   \CPUMoveType=0 ;Start with move and get closer
   \CPUBufferMoveType=#CPUBufferMoveTypeInit
   Return
@@ -1222,19 +1226,18 @@ BlITZ
     End If
   Wend
 
-  cursorCPU.b=0 
-  nextCurrentCPU.b=currentCPU
+  cursorCPU=0 
   For i.b=0 to (nbPlayer-1)
-    Select i
-      Case 0
+    ;Select i
+    ;  Case 0
         ;MOVE.w #$f00,$dff180 ; red
-      Case 1
+    ;  Case 1
         ;MOVE.w #$0f0,$dff180 ; green
-      Case 2
+    ;  Case 2
         ;MOVE.w #$00f,$dff180 ; blue
-      Case 3
+    ;  Case 3
        ;MOVE.w #$0ff,$dff180 ; cyan 
-    End Select
+    ;End Select
        
     UsePath player(i)
     If (\dead <> 1)
@@ -1283,47 +1286,48 @@ BlITZ
             ;Get Joy Button
             buttonOn=MJoyb{currentJoy}
           EndIf
-        Else ;CPU alternatemove to Shoot and shoot
-
+        Else ;CPU alternate move to Shoot and shoot
           If \CPUBufferState>0
             \CPUBufferState=\CPUBufferState-1
           Else
             \CPUState=1-\CPUState  
-            If \CPUState=0 ; if move and shoot (0) switch after shoot
-              \CPUBufferState=#CPUBufferStateInit 
-            End If
+            ;If \CPUState=0 ; if move and shoot (0) switch after shoot
+            \CPUBufferState=#CPUBufferStateInit 
+            ;End If
           End If
           If (\waitBullet>0)
             \waitBullet=\waitBullet-1
           Else
             If \CPUState=0
-              If (\bullets>0)
-                Select \direction
-                  Case 0
-                    If (\absDeltaX<#distanceCPUShot)
-                      If (\deltaY>0)
-                        buttonOn=1
+              If \bullets>0
+                If \targetPlayer > -1
+                  Select \direction
+                    Case 0
+                      If (\absDeltaX<#distanceCPUShot)
+                        If (\deltaY>0)
+                          buttonOn=1
+                        End If
                       End If
-                    End If
-                  Case 1
-                    If (\absDeltaY<#distanceCPUShot)
-                      If (\deltaX<0)
-                        buttonOn=1
+                    Case 1
+                      If (\absDeltaY<#distanceCPUShot)
+                        If (\deltaX<0)
+                          buttonOn=1
+                        End If
                       End If
-                    End If
-                  Case 2
-                    If (\absDeltaX<#distanceCPUShot)
-                      If (\deltaY<0)
-                        buttonOn=1
+                    Case 2
+                      If (\absDeltaX<#distanceCPUShot)
+                        If (\deltaY<0)
+                          buttonOn=1
+                        End If
                       End If
-                    End If
-                  Case 3
-                    If (\absDeltaY<#distanceCPUShot)
-                      If (\deltaX>0)
-                        buttonOn=1
+                    Case 3
+                      If (\absDeltaY<#distanceCPUShot)
+                        If (\deltaX>0)
+                          buttonOn=1
+                        End If
                       End If
-                    End If
-                End Select
+                  End Select
+                End If
               End If
             End If
         End If
@@ -1355,19 +1359,17 @@ BlITZ
               End If 
             End If
           Else ; or cpu move
-            If (currentCPU=cursorCPU) and db=0; only one CPU move recalculation by frame (performance issue)
+
+            If currentCPU=cursorCPU AND \CPUTask=0 ; only one CPU move recalculation by frame (performance issue)
               Gosub CPUMove
               \previousVJoyx=vJoyx
               \previousVJoyy=vJoyy
-              nextCurrentCPU=currentCPU+1
-              If (nextCurrentCPU=nbCPU)
-                nextCurrentCPU=0
-              End If
             Else
               vJoyx=\previousVJoyx
               vJoyy=\previousVJoyy
             End If
           End If
+
           If (vJoyx <> 0 OR vJoyy <> 0)
             \frameCounter=\frameCounter+1
             If (\frameCounter=\frameAnim)
@@ -1405,13 +1407,9 @@ BlITZ
               End If
 
 
-              ; CPU behavior on wall it
-              If currentJoy<0
-                If (currentCPU=cursorCPU) and db=1 ; only one CPu by frame on behavior
-                  nextCurrentCPU=currentCPU+1
-                  If (nextCurrentCPU=nbCPU)
-                    nextCurrentCPU=0
-                  End If
+              ; CPU behavior on wall hit
+              If currentJoy = -1
+                If currentCPU=cursorCPU ;and \CPUTask=1 ;only one CPU by frame on behavior
                   If (allowMoveA=0 AND allowMoveB=0)
                     nbDir.b=0
                     d1.b=-1
@@ -1551,7 +1549,7 @@ BlITZ
                 \animIndex=\animIndex+1
               Endif
             End If
-          Endif
+          End If
         Else
           ; Fire
           \frameCounter=0
@@ -1748,12 +1746,42 @@ BlITZ
           BBlit db,a,\x,\y  ;blinking if invincible
         End If
       End If
-      If \joy<0
-        cursorCPU=cursorCPU+1
+      ; Debug to Delete
+      ;If \CPUTask=0 
+      ;  Boxf \avatar LSL 6,0,8+\avatar LSL 6,8,14 ; gray - calcule move
+      ;Else
+      ;  Boxf \avatar LSL 6,0,8+\avatar LSL 6,8,15 ; purple - avoid
+      ;End If
+      ;If \CPUState=0
+      ;  Boxf 8+\avatar LSL 6,0,16+\avatar LSL 6,8,17 ; blue - move and shoot
+      ;Else
+      ;  Boxf 8+\avatar LSL 6,0,16+\avatar LSL 6,8,18 ; grey - move
+      ;End If
+      ;If \CPUMoveType=0
+      ;  Boxf 8+\avatar LSL 6,8,16+\avatar LSL 6,16,20 ; green - get closer
+      ;Else
+      ;  Boxf 8+\avatar LSL 6,8,16+\avatar LSL 6,16,21 ; yellow - avoid
+      ;End If
+      ; End Debug
+
+      If currentJoy = -1
+        If currentCPU=cursorCPU
+          \CPUTask=1-\CPUTask ; invert task for next CPU round
+        End If
       End If
-    End If
-  next
-  currentCPU=nextCurrentCPU
+      If \joy = -1 
+        cursorCPU=cursorCPU+1  
+      End If
+
+    End If 
+
+  Next
+
+  ;next CPU for Next Frame
+  currentCPU=currentCPU+1
+  If (currentCPU=nbCPU)
+    currentCPU=0
+  End If
 
   ;MOVE.w #$f00,$dff180 ; red
 
@@ -1983,12 +2011,12 @@ BlITZ
   \deltaX=0
   \deltaY=0
   selected.b=0
-  ;Target player to shoot
   If (\targetPlayer=-1)
+      ;Target player to shoot
       For p.b=0 to (nbPlayer-1)
         If selected=0
-          If (p<>i AND \targetPlayer = -1 )
-              If (player(i)\dead = 0)
+          If (p<>i)
+              If (player(p)\dead = 0)
                 target.b=R2A(R2Ind)
                 UpdateIndexR2A{}
                 If (target=1) 
@@ -1999,9 +2027,8 @@ BlITZ
           End If
         End If
       Next
-  End If
-  ;Check if dead
-  If (\targetPlayer>=0)
+  ELse
+    ;Check if dead
     If (player(\targetPlayer)\dead>0)
       \targetPlayer=-1
     End If

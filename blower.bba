@@ -1691,7 +1691,7 @@ BlITZ
                     bullets()\y1=\y+6
                     bullets()\y2=\y+8
                     bullets()\x1=\x
-                    bullets()\x2=\x+2
+                    bullets()\x2=\x+3
                     bullets()\animIndex=0
                     bullets()\player=i
                     bullets()\speed=#speedBullet

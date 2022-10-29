@@ -33,13 +33,13 @@ I hope you'll get a little fun with this game.
 
 Available on [AmigaLive](https://www.amigalive.com/) for remote multiplay.
 
-[ADF](./release/1.0-alpha1/Blower.adf)
+[ADF](./release/1.0/Blower.adf)
 
-[Zip file for HardDisk installation](./release/1.0-alpha1/Blower_HD.zip)
+[Zip file for HardDisk installation](./release/1.0/Blower_HD.zip)
 
-[ISO for CDTV](./release/1.0-alpha1/Blower.iso)
+[ISO for CDTV](./release/1.0/Blower_CDTV.iso)
 
-[ISO for CD32](./release/1.0-alpha1/Blower_32.iso)
+[ISO for CD32](./release/1.0/Blower_32.iso)
 
 
 ![In game screenshot - World Forest](doc/world3.png)

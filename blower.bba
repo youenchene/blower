@@ -1872,24 +1872,43 @@ BlITZ
                     ;Box xb-7,yb-7,xb+7,yb+7,15;debug
                     ;Box player(p)\x-1,player(p)\y-1,player(p)\x+17,player(p)\y+17,10;debug
                     If RectsHit(xb-7,yb-7,14,14,player(p)\x,player(p)\y,16,16) ; larger to void more calculus
-                      bullets()\endLife=#endAnimCount ; End bullet
-                      player(p)\previousEnergy=player(p)\energy
-                      player(p)\energy=player(p)\energy-\bulletImpact
-                      player(p)\shot=#shotAnim
-                      ; CPU if been shot new target is the avatar who shot the CPU
-                      If player(p)\joy=-1
-                        player(p)\targetPlayer=\srcAvatar
-                      End If
-                      ;End CPU
-                      If AddItem(sndevents())
-                        If \x >= 160
-                          SFXInit{&sndevents(),3,64,1,8}
-                        Else
-                          SFXInit{&sndevents(),3,64,0,8}
-                        Endif
-                      End If
-                      If (player(p)\energy <= 0)
-                        player(p)\dead=3
+                      dot.b=-1
+                      If (\direction=0)
+                        \y=\y-\speed   
+                        dot.b=Point(\x2,\y-1)
+                      EndIf
+                      If (\direction=1)
+                        \x=\x+\speed 
+                        dot.b=Point(\x+6,\y2)
+                      EndIf
+                      If (\direction=2)
+                        \y=\y+\speed   
+                        dot.b=Point(\x2,\y+6)  
+                      EndIf
+                      If (\direction=3)
+                        \x=\x-\speed 
+                        dot.b=Point(\x-1,\y2)
+                      EndIf
+                      If dot>8 and dot<25
+                        bullets()\endLife=#endAnimCount ; End bullet
+                        player(p)\previousEnergy=player(p)\energy
+                        player(p)\energy=player(p)\energy-\bulletImpact
+                        player(p)\shot=#shotAnim
+                        ; CPU if been shot new target is the avatar who shot the CPU
+                        If player(p)\joy=-1
+                          player(p)\targetPlayer=\srcAvatar
+                        End If
+                        ;End CPU
+                        If AddItem(sndevents())
+                          If \x >= 160
+                            SFXInit{&sndevents(),3,64,1,8}
+                          Else
+                            SFXInit{&sndevents(),3,64,0,8}
+                          Endif
+                        End If
+                        If (player(p)\energy <= 0)
+                          player(p)\dead=3
+                        EndIf
                       EndIf
                     EndIf
                   EndIf

@@ -18,7 +18,7 @@
         {
             "type": "cdtv",
             "boot": true,
-            "supportName": "Blower",
+            "supportName": "Blower_CDTV",
             "supportVolumeSet": "",
             "supportPublisher": "Micrix Production",
             "supportPreparer": "",

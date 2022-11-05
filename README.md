@@ -33,6 +33,8 @@ I hope you'll get a little fun with this game.
 
 Available on [AmigaLive](https://www.amigalive.com/) for remote multiplay.
 
+On itch.io to pay me a beer https://youenchene.itch.io/blower
+
 [ADF](./release/1.0.1/Blower.adf)
 
 [Zip file for HardDisk installation](./release/1.0.1/Blower_HD.zip)
@@ -108,3 +110,18 @@ Original screen shots :
 ![PC - In game 1](doc/pc_screen1.png)
 ![PC - In game 2](doc/pc_screen2.png)
 ![PC - Win Screen](doc/pc_winscreen.png)
+
+## Press Releases
+
+### English
+
+- Saberman Youtube Channel : https://www.youtube.com/watch?v=l7UhM_wkf4I
+- Indie Retro News : https://www.indieretronews.com/2022/11/blower-bomberman-clone-for-commodore.html
+- Reddit Post : https://www.reddit.com/r/amiga/comments/yigd28/discovered_a_new_ported_game_on_itchio_blower/
+
+
+### French :
+
+- Amiga France : https://www.amigafrance.com/forums/topic/blower/
+- MO5.com : https://mag.mo5.com/233955/neonnoir-et-autres-jeux-de-lamiga-blitz-basic-game-jam/
+- Gamopat : https://www.gamopat.com/2022/11/le-blitz-basic-toujours-vaillant-sur-amiga.html

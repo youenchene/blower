@@ -125,3 +125,8 @@ Original screen shots :
 - Amiga France : https://www.amigafrance.com/forums/topic/blower/
 - MO5.com : https://mag.mo5.com/233955/neonnoir-et-autres-jeux-de-lamiga-blitz-basic-game-jam/
 - Gamopat : https://www.gamopat.com/2022/11/le-blitz-basic-toujours-vaillant-sur-amiga.html
+
+
+### German
+
+- Radio PARALAX - RetroVision - Plug & Play #118 : https://www.youtube.com/watch?v=wYMwnlSGA0Y&t=19265s
